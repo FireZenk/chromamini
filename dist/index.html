@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChromaMini · Comparador Bilingüe de Pinturas para Miniaturas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            studio: {
+              950: '#090a0f',
+              900: '#11131a',
+              800: '#191c26',
+              700: '#242938',
+              600: '#32394e',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* Efecto de brillo metálico para muestras de pintura metálica */
+    .swatch-metallic {
+      background-image: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.36) 0%,
+        rgba(255, 255, 255, 0.04) 35%,
+        rgba(0, 0, 0, 0.24) 65%,
+        rgba(255, 255, 255, 0.28) 100%
+      );
+    }
+    /* Efecto translúcido para tintas/washes y contrast */
+    .swatch-wash {
+      background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.28), rgba(0,0,0,0.34));
+    }
+    /* Scrollbar estilizada */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.35);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.55);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-studio-950 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200 selection:bg-amber-500 selection:text-white">
+
+  <!-- Barra de navegación superior -->
+  <header class="sticky top-0 z-30 backdrop-blur-md bg-white/90 dark:bg-studio-900/90 border-b border-slate-200 dark:border-studio-700/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-600 flex items-center justify-center shadow-lg shadow-amber-500/20 text-white shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+            <path d="M8.5 14a3.5 3.5 0 0 0 3.5 3.5"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-lg sm:text-xl tracking-tight">ChromaMini</h1>
+            <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+              ES / EN · ΔE Lab
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 hidden md:block">
+            Conversor y comparador perceptual de pinturas acrílicas para modelismo
+          </p>
+        </div>
+      </div>
+
+      <!-- Controles de cabecera: Switch Daltonismo + Contador + Tema -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-studio-800 border border-slate-200 dark:border-studio-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 hidden sm:inline">Daltonismo</span>
+          <button id="cbQuickSwitch" type="button" role="switch" aria-checked="false" title="Activar o desactivar asistencia para daltonismo"
+            class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-slate-300 dark:bg-studio-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
+            <span id="cbQuickSwitchKnob" class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 translate-x-0"></span>
+          </button>
+          <select id="cbTypeSelect" aria-label="Tipo de daltonismo"
+            class="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer max-w-[145px] sm:max-w-[200px] truncate">
+            <option value="none" class="bg-white dark:bg-studio-800">Visión tricromática</option>
+            <option value="deuteranomaly" class="bg-white dark:bg-studio-800">Deuteranomalía (Verde débil)</option>
+            <option value="deuteranopia" class="bg-white dark:bg-studio-800">Deuteranopía (Sin verde)</option>
+            <option value="protanomaly" class="bg-white dark:bg-studio-800">Protanomalía (Rojo débil)</option>
+            <option value="protanopia" class="bg-white dark:bg-studio-800">Protanopía (Sin rojo)</option>
+            <option value="tritanomaly" class="bg-white dark:bg-studio-800">Tritanomalía (Azul/Amarillo)</option>
+            <option value="tritanopia" class="bg-white dark:bg-studio-800">Tritanopía (Sin azul/amarillo)</option>
+            <option value="achromatomaly" class="bg-white dark:bg-studio-800">Acromatomalía (Baja saturación)</option>
+            <option value="achromatopsia" class="bg-white dark:bg-studio-800">Acromatopsia (Escala grises)</option>
+          </select>
+        </div>
+
+        <span id="dbCountBadge" class="hidden xl:inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-studio-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-studio-700">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span id="totalPaintsLabel">0</span> refs
+        </span>
+
+        <button id="themeToggleBtn" type="button" title="Cambiar tema claro/oscuro"
+          class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-studio-800 dark:hover:bg-studio-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-studio-700 transition">
+          <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
+          </svg>
+          <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 block dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra secundaria contextual de Asistencia para Daltonismo -->
+    <div id="cbAssistantBar" class="hidden bg-amber-500/10 dark:bg-amber-500/10 border-t border-amber-500/25">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+          <span class="inline-flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
+            <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            <span id="cbActiveProfileTitle">Deuteranomalía Activa</span>
+          </span>
+          <span id="cbActiveProfileDesc" class="text-slate-600 dark:text-slate-300 hidden md:inline">
+            Desplazamiento matemático LMS para diferenciar tonos rojos y verdes ocultos.
+          </span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="inline-flex rounded-lg bg-white/80 dark:bg-studio-800 p-0.5 border border-slate-200 dark:border-studio-700">
+            <button type="button" id="cbModeCorrectBtn"
+              class="px-2.5 py-1 rounded-md font-semibold text-[11px] bg-amber-500 text-white shadow-sm transition">
+              Corrección (Realce LMS)
+            </button>
+            <button type="button" id="cbModeSimulateBtn"
+              class="px-2.5 py-1 rounded-md font-semibold text-[11px] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">
+              Simulación de Visión
+            </button>
+          </div>
+
+          <label class="inline-flex items-center gap-1.5 cursor-pointer select-none px-2.5 py-1 rounded-lg bg-white/80 dark:bg-studio-800 border border-slate-200 dark:border-studio-700 font-medium text-[11px] text-slate-700 dark:text-slate-200">
+            <input id="cbSplitSwatchToggle" type="checkbox" checked class="w-3.5 h-3.5 rounded text-amber-500 focus:ring-amber-500" />
+            <span>Ver Original + Asistido</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenido Principal -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Panel de Búsqueda Bilingüe + Selector HEX Personalizado -->
+    <section class="bg-white dark:bg-studio-900 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-studio-700/80 shadow-sm space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
+        <!-- Buscador principal -->
+        <div class="lg:col-span-8 space-y-1.5">
+          <label for="searchInput" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Buscar pintura en Español, Inglés o Código de Referencia
+          </label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+              </svg>
+            </div>
+            <input id="searchInput" type="text" autocomplete="off"
+              placeholder="Ej: Rojo Bermellón, Mephiston Red, 70.909, 1763, Oro Glorioso, Hueso, Leadbelcher..."
+              class="w-full pl-11 pr-11 py-3 rounded-xl bg-slate-50 dark:bg-studio-800 border border-slate-300 dark:border-studio-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm sm:text-base placeholder:text-slate-400 dark:placeholder:text-slate-500 transition" />
+            <button id="clearSearchBtn" type="button" title="Limpiar búsqueda"
+              class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
+              </svg>
+            </button>
+          </div>
+          <!-- Búsquedas rápidas de ejemplo -->
+          <div id="quickSearchContainer" class="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
+            <span class="text-slate-400 dark:text-slate-500 mr-1">Pruebas rápidas:</span>
+            <button type="button" data-quick="Rojo Bermellón" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition">Rojo Bermellón</button>
+            <button type="button" data-quick="1763" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 font-mono transition">1763 (GSW)</button>
+            <button type="button" data-quick="Hueso" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition">Hueso / Bone</button>
+            <button type="button" data-quick="70.909" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 font-mono transition">70.909</button>
+            <button type="button" data-quick="Oro" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition">Oro / Gold</button>
+            <button type="button" data-quick="Nuln" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition">Nuln Oil</button>
+          </div>
+        </div>
+
+        <!-- Buscador por Color Personalizado / HEX -->
+        <div class="lg:col-span-4 space-y-1.5">
+          <label for="customHexInput" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            O busca por color visual / código HEX
+          </label>
+          <div class="flex items-center gap-2">
+            <label class="relative w-12 h-11 rounded-xl overflow-hidden border border-slate-300 dark:border-studio-600 cursor-pointer shrink-0 shadow-inner">
+              <input id="customColorPicker" type="color" value="#9A1B1E" class="absolute -inset-2 w-16 h-16 cursor-pointer border-0" />
+            </label>
+            <input id="customHexInput" type="text" value="#9A1B1E" maxlength="7" placeholder="#RRGGBB"
+              class="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-studio-800 border border-slate-300 dark:border-studio-600 font-mono text-sm uppercase focus:outline-none focus:ring-2 focus:ring-amber-500" />
+            <button id="applyCustomColorBtn" type="button"
+              class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white font-semibold text-sm shadow-md shadow-amber-500/20 transition shrink-0">
+              Comparar
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 dark:text-slate-500">
+            Encuentra el bote más parecido a cualquier muestra HEX.
+          </p>
+        </div>
+      </div>
+
+      <!-- Filtros por Marca y Tipo de Acabado -->
+      <div class="pt-4 border-t border-slate-200 dark:border-studio-700/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Marcas y Gamas</span>
+            <button id="resetFiltersBtn" type="button" class="text-xs text-amber-600 dark:text-amber-400 hover:underline font-medium">
+              Activar todas
+            </button>
+          </div>
+          <div id="brandFiltersContainer" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <div class="space-y-1.5">
+          <span class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Acabado / Tipo</span>
+          <div id="typeFiltersContainer" class="flex flex-wrap gap-1.5"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Layout Principal de 2 Columnas -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- COLUMNA IZQUIERDA (7 cols): Catálogo filtrable de pinturas -->
+      <div class="lg:col-span-7 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold tracking-tight">Catálogo de Pinturas</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              Pulsa cualquier bote para establecerlo como color de referencia y calcular sus equivalencias.
+            </p>
+          </div>
+          <span id="filteredCountLabel" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-200/70 dark:bg-studio-800 text-slate-700 dark:text-slate-300">
+            0 resultados
+          </span>
+        </div>
+
+        <!-- Grid de tarjetas de pintura (Delegación de eventos) -->
+        <div id="paintCatalogGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[720px] overflow-y-auto pr-1"></div>
+
+        <!-- Estado vacío si no hay resultados -->
+        <div id="emptyCatalogState" class="hidden bg-white dark:bg-studio-900 rounded-2xl p-10 border border-slate-200 dark:border-studio-700 text-center space-y-3">
+          <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-studio-800 mx-auto flex items-center justify-center text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-base">No se encontraron pinturas con esos criterios</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            Prueba a escribir el nombre en español o inglés (ej. "Rojo", "Red", "Hueso", "Gold"), el código numérico (ej. "70.909") o reactiva las marcas filtradas.
+          </p>
+          <button id="resetAllBtn" type="button" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition">
+            Restablecer búsqueda y filtros
+          </button>
+        </div>
+      </div>
+
+      <!-- COLUMNA DERECHA (5 cols): Panel de Referencia y Equivalencias Ordenadas por ΔE -->
+      <aside class="lg:col-span-5 lg:sticky lg:top-24 space-y-4">
+        <div id="referencePanel" class="bg-white dark:bg-studio-900 rounded-2xl border border-slate-200 dark:border-studio-700/80 overflow-hidden shadow-md">
+          <div id="refColorBanner" class="h-28 w-full relative transition-colors duration-300 flex overflow-hidden">
+            <div id="refBannerOriginalHalf" class="h-full w-full transition-all duration-300 relative" style="background-color: #9A1B1E;">
+              <span id="refOriginalTag" class="hidden absolute top-2.5 left-3 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-black/55 text-white backdrop-blur-sm">
+                Original
+              </span>
+            </div>
+            <div id="refBannerAssistedHalf" class="hidden h-full w-1/2 transition-all duration-300 relative border-l border-white/30" style="background-color: #9A1B1E;">
+              <span id="refAssistedTag" class="absolute top-2.5 right-3 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/90 text-slate-950 backdrop-blur-sm">
+                Corregido
+              </span>
+            </div>
+
+            <div class="absolute inset-x-0 bottom-0 p-3 flex items-center justify-between pointer-events-none">
+              <div class="flex items-center gap-1.5 pointer-events-auto">
+                <span id="refBrandBadge" class="px-2.5 py-1 rounded-lg text-xs font-bold backdrop-blur-md bg-black/50 text-white border border-white/15">
+                  Citadel Base
+                </span>
+                <span id="refFamilyBadge" class="px-2 py-1 rounded-lg text-[11px] font-mono font-extrabold backdrop-blur-md bg-white/90 text-slate-900 border border-black/15">
+                  [ROJ]
+                </span>
+              </div>
+              <button id="copyRefHexBtn" type="button" title="Copiar código HEX original"
+                class="pointer-events-auto px-2.5 py-1 rounded-lg text-xs font-mono font-semibold backdrop-blur-md bg-black/50 hover:bg-black/70 text-white border border-white/15 flex items-center gap-1.5 transition">
+                <span id="refHexText">#9A1B1E</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="p-4 sm:p-5 space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                  Pintura de Referencia
+                </p>
+                <h3 id="refNameEs" class="text-lg sm:text-xl font-extrabold leading-tight">
+                  Rojo Mefistón
+                </h3>
+                <p id="refNameEn" class="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                  Mephiston Red
+                </p>
+              </div>
+              <div class="text-right shrink-0">
+                <span id="refCodeBadge" class="inline-block px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-studio-800 border border-slate-200 dark:border-studio-700 font-mono text-xs font-semibold">
+                  21-03
+                </span>
+                <p id="refTypeLabel" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  Base / Estándar
+                </p>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-200 dark:border-studio-700/80 flex flex-wrap items-center justify-between gap-2">
+              <label class="inline-flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-slate-700 dark:text-slate-300">
+                <input id="sameFinishToggle" type="checkbox" checked class="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 border-slate-300 dark:border-studio-600 bg-slate-100 dark:bg-studio-800" />
+                <span>Mismo acabado (ej. Metálico con Metálico)</span>
+              </label>
+
+              <label class="inline-flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-slate-700 dark:text-slate-300">
+                <input id="excludeSameBrandToggle" type="checkbox" class="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 border-slate-300 dark:border-studio-600 bg-slate-100 dark:bg-studio-800" />
+                <span>Otras marcas</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lista de Equivalencias Ordenadas por Similitud Perceptual (Delta-E) -->
+        <div class="bg-white dark:bg-studio-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-studio-700/80 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-sm sm:text-base">Equivalencias más cercanas</h3>
+              <p id="equivalentsSubtitle" class="text-[11px] text-slate-500 dark:text-slate-400">
+                Comparación visual partida (Izq: Referencia · Der: Equivalente)
+              </p>
+            </div>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-studio-800 text-slate-500 dark:text-slate-400">
+              CIELAB ΔE
+            </span>
+          </div>
+
+          <div id="equivalentsList" class="space-y-2.5 max-h-[480px] overflow-y-auto pr-1"></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Notificación Toast para copiado al portapapeles -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2.5 rounded-xl shadow-xl text-xs font-semibold flex items-center gap-2">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-400 dark:text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    <span id="toastMessage">Copiado al portapapeles</span>
+  </div>
+
+  <footer class="mt-10 border-t border-slate-200 dark:border-studio-800 py-5 text-center text-xs text-slate-500 dark:text-slate-400">
+    <div class="max-w-7xl mx-auto px-4">
+      ChromaMini · Los valores HEX son aproximaciones digitales calibradas; el acabado final puede variar ligeramente según imprimación y barniz.
+    </div>
+  </footer>
+
+  <script>
+    /**
+     * BASE DE DATOS DE PINTURAS PARA MINIATURAS (100+ referencias calibradas)
+     * Bilingüe ES / EN + Referencias numéricas oficiales
+     */
+    const PAINT_DATABASE = [
+      // ==================== ROJOS Y CARMESÍES ====================
+      { id: 'cit-mephiston', brand: 'Citadel', range: 'Base', name_es: 'Rojo Mefistón', name_en: 'Mephiston Red', code: '21-03', type: 'Base', hex: '#9A1B1E' },
+      { id: 'cit-khorne', brand: 'Citadel', range: 'Base', name_es: 'Rojo Khorne', name_en: 'Khorne Red', code: '21-04', type: 'Base', hex: '#6A0F14' },
+      { id: 'cit-evilsunz', brand: 'Citadel', range: 'Layer', name_es: 'Escarlata Sol Malvado', name_en: 'Evil Sunz Scarlet', code: '22-03', type: 'Base', hex: '#C21F23' },
+      { id: 'cit-wildrider', brand: 'Citadel', range: 'Layer', name_es: 'Rojo Jinete Salvaje', name_en: 'Wild Rider Red', code: '22-04', type: 'Base', hex: '#E43625' },
+      { id: 'vmc-vermilion', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Rojo Bermellón', name_en: 'Vermilion', code: '70.909', type: 'Base', hex: '#C62824' },
+      { id: 'vmc-flatred', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Rojo Mate', name_en: 'Flat Red', code: '70.957', type: 'Base', hex: '#9E2326' },
+      { id: 'vmc-burntred', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Rojo Tostado', name_en: 'Burnt Red', code: '70.814', type: 'Base', hex: '#69191E' },
+      { id: 'vmc-carmine', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Rojo Carmín', name_en: 'Carmine Red', code: '70.908', type: 'Base', hex: '#B41D25' },
+      { id: 'vgc-bloodyred', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Rojo Sanguina', name_en: 'Bloody Red', code: '72.010', type: 'Base', hex: '#BE1F24' },
+      { id: 'vgc-goryred', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Rojo Víscera', name_en: 'Gory Red', code: '72.011', type: 'Base', hex: '#6B1217' },
+      { id: 'vgc-scarletblood', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Sangre Escarlata', name_en: 'Scarlet Blood', code: '72.106', type: 'Base', hex: '#991C21' },
+      { id: 'gsw-bloodred', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Rojo Sangre', name_en: 'Blood Red', code: '1763', type: 'Base', hex: '#9B191D' },
+      { id: 'gsw-redtruth', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Rojo Verdad', name_en: 'Red Truth', code: '1764', type: 'Base', hex: '#C42326' },
+      { id: 'gsw-hellfire', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Rojo Fuego Infernal', name_en: 'Hellfire Red', code: '1815', type: 'Base', hex: '#681116' },
+      { id: 'ak-bloodred', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Rojo Sangre', name_en: 'Blood Red', code: 'AK11088', type: 'Base', hex: '#9B1B20' },
+      { id: 'ak-deepred', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Rojo Profundo', name_en: 'Deep Red', code: 'AK11092', type: 'Base', hex: '#6C1217' },
+      { id: 'ap-dragonred', brand: 'The Army Painter', range: 'Warpaints Fanatic', name_es: 'Rojo Dragón', name_en: 'Dragon Red', code: 'WP3004', type: 'Base', hex: '#9A1D21' },
+      { id: 'ap-pure-red', brand: 'The Army Painter', range: 'Warpaints Fanatic', name_es: 'Rojo Puro', name_en: 'Pure Red', code: 'WP3005', type: 'Base', hex: '#C32025' },
+
+      // ==================== NARANJAS Y AMARILLOS ====================
+      { id: 'cit-averland', brand: 'Citadel', range: 'Base', name_es: 'Ocaso de Averland', name_en: 'Averland Sunset', code: '21-01', type: 'Base', hex: '#FBB81C' },
+      { id: 'cit-yriel', brand: 'Citadel', range: 'Layer', name_es: 'Amarillo Yriel', name_en: 'Yriel Yellow', code: '22-01', type: 'Base', hex: '#FFD900' },
+      { id: 'cit-flashgitz', brand: 'Citadel', range: 'Layer', name_es: 'Amarillo Tipejo Vacilón', name_en: 'Flash Gitz Yellow', code: '22-02', type: 'Base', hex: '#FFF300' },
+      { id: 'cit-trollslayer', brand: 'Citadel', range: 'Layer', name_es: 'Naranja Matatrolls', name_en: 'Troll Slayer Orange', code: '22-05', type: 'Base', hex: '#F36C21' },
+      { id: 'cit-jokaero', brand: 'Citadel', range: 'Base', name_es: 'Naranja Jokaero', name_en: 'Jokaero Orange', code: '21-02', type: 'Base', hex: '#EE3823' },
+      { id: 'vmc-flatyellow', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Amarillo Mate', name_en: 'Flat Yellow', code: '70.953', type: 'Base', hex: '#F9D616' },
+      { id: 'vmc-goldbrown', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Marrón Dorado / Ocre', name_en: 'Goldbrown', code: '70.877', type: 'Base', hex: '#E6A622' },
+      { id: 'vmc-germanyorange', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Naranja Alemán', name_en: 'German Orange', code: '70.805', type: 'Base', hex: '#EC5224' },
+      { id: 'vgc-sunyellow', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Amarillo Soleado', name_en: 'Sun Yellow', code: '72.006', type: 'Base', hex: '#FCE016' },
+      { id: 'vgc-orangefire', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Naranja Fuego', name_en: 'Orange Fire', code: '72.008', type: 'Base', hex: '#F16822' },
+      { id: 'gsw-sunyellow', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Amarillo Sol', name_en: 'Sun Yellow', code: '1758', type: 'Base', hex: '#FAD618' },
+      { id: 'gsw-emberorange', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Naranja Ascua', name_en: 'Ember Orange', code: '1761', type: 'Base', hex: '#EE6620' },
+      { id: 'ak-deepyellow', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Amarillo Intenso', name_en: 'Deep Yellow', code: 'AK11044', type: 'Base', hex: '#F7B71E' },
+      { id: 'ap-daemonic', brand: 'The Army Painter', range: 'Warpaints Fanatic', name_es: 'Amarillo Demoníaco', name_en: 'Daemonic Yellow', code: 'WP3014', type: 'Base', hex: '#FBD818' },
+
+      // ==================== VERDES ====================
+      { id: 'cit-waaagh', brand: 'Citadel', range: 'Base', name_es: 'Carne de Waaagh!', name_en: 'Waaagh! Flesh', code: '21-13', type: 'Base', hex: '#1F562A' },
+      { id: 'cit-warboss', brand: 'Citadel', range: 'Layer', name_es: 'Verde Kaudillo', name_en: 'Warboss Green', code: '22-27', type: 'Base', hex: '#3E8E3B' },
+      { id: 'cit-moot', brand: 'Citadel', range: 'Layer', name_es: 'Verde Moot', name_en: 'Moot Green', code: '22-29', type: 'Base', hex: '#52B448' },
+      { id: 'cit-deathworld', brand: 'Citadel', range: 'Base', name_es: 'Verde Bosque Letal', name_en: 'Death World Forest', code: '21-15', type: 'Base', hex: '#5C6736' },
+      { id: 'cit-caliban', brand: 'Citadel', range: 'Base', name_es: 'Verde Caliban', name_en: 'Caliban Green', code: '21-12', type: 'Base', hex: '#103B25' },
+      { id: 'cit-castellan', brand: 'Citadel', range: 'Base', name_es: 'Verde Castellano', name_en: 'Castellan Green', code: '21-14', type: 'Base', hex: '#314726' },
+      { id: 'vmc-olive', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Verde Oliva', name_en: 'Olive Green', code: '70.967', type: 'Base', hex: '#4F6132' },
+      { id: 'vmc-darkgreen', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Verde Oscuro', name_en: 'Dark Green', code: '70.970', type: 'Base', hex: '#18422A' },
+      { id: 'vmc-lime', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Verde Lima', name_en: 'Lime Green', code: '70.827', type: 'Base', hex: '#6BB045' },
+      { id: 'vgc-goblingreen', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Verde Goblin', name_en: 'Goblin Green', code: '72.030', type: 'Base', hex: '#3B8A38' },
+      { id: 'vgc-sickgreen', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Verde Asqueroso / Orco', name_en: 'Sick Green', code: '72.029', type: 'Base', hex: '#215B2E' },
+      { id: 'vgc-escorpena', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Verde Escorpena', name_en: 'Scorpy Green', code: '72.032', type: 'Base', hex: '#4FB346' },
+      { id: 'gsw-orcskin', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Piel de Orco', name_en: 'Orc Skin', code: '1779', type: 'Base', hex: '#3D8C3A' },
+      { id: 'gsw-huntergreen', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Verde Cazador', name_en: 'Hunter Green', code: '1782', type: 'Base', hex: '#133E27' },
+      { id: 'gsw-olive', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Verde Oliva Campo', name_en: 'Field Olive', code: '1828', type: 'Base', hex: '#596535' },
+      { id: 'ak-frog', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Verde Rana', name_en: 'Frog Green', code: 'AK11145', type: 'Base', hex: '#418E3C' },
+      { id: 'ap-greenskin', brand: 'The Army Painter', range: 'Warpaints Fanatic', name_es: 'Piel Verde', name_en: 'Greenskin', code: 'WP3045', type: 'Base', hex: '#235C2F' },
+
+      // ==================== AZULES Y TURQUESAS ====================
+      { id: 'cit-macragge', brand: 'Citadel', range: 'Base', name_es: 'Azul Macragge', name_en: 'Macragge Blue', code: '21-08', type: 'Base', hex: '#1A3E78' },
+      { id: 'cit-kantor', brand: 'Citadel', range: 'Base', name_es: 'Azul Kantor', name_en: 'Kantor Blue', code: '21-07', type: 'Base', hex: '#122449' },
+      { id: 'cit-calgar', brand: 'Citadel', range: 'Layer', name_es: 'Azul Calgar', name_en: 'Calgar Blue', code: '22-14', type: 'Base', hex: '#3B6EB3' },
+      { id: 'cit-sotek', brand: 'Citadel', range: 'Layer', name_es: 'Verde Sotek / Turquesa', name_en: 'Sotek Green', code: '22-19', type: 'Base', hex: '#0D6A7D' },
+      { id: 'cit-thousand', brand: 'Citadel', range: 'Base', name_es: 'Azul Mil Hijos', name_en: 'Thousand Sons Blue', code: '21-31', type: 'Base', hex: '#0E5571' },
+      { id: 'vmc-prussian', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Azul de Prusia Oscuro', name_en: 'Dark Prussian Blue', code: '70.899', type: 'Base', hex: '#14264B' },
+      { id: 'vmc-flatblue', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Azul Mate', name_en: 'Flat Blue', code: '70.962', type: 'Base', hex: '#1D437E' },
+      { id: 'vgc-ultramarine', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Azul Ultramar', name_en: 'Ultramarine Blue', code: '72.022', type: 'Base', hex: '#1C417D' },
+      { id: 'vgc-magicblue', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Azul Mágico', name_en: 'Magic Blue', code: '72.021', type: 'Base', hex: '#2463A8' },
+      { id: 'gsw-ultramarine', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Azul Ultramarino', name_en: 'Ultramarine Blue', code: '1771', type: 'Base', hex: '#1B3F7B' },
+      { id: 'gsw-abyssblue', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Azul Abisal', name_en: 'Abyss Blue', code: '1773', type: 'Base', hex: '#13254B' },
+      { id: 'ak-ducat', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Azul Ducado', name_en: 'Ducat Blue', code: 'AK11181', type: 'Base', hex: '#1D4380' },
+      { id: 'ap-ultramarine', brand: 'The Army Painter', range: 'Warpaints Fanatic', name_es: 'Azul Ultramar', name_en: 'Ultramarine Blue', code: 'WP3027', type: 'Base', hex: '#1C407A' },
+
+      // ==================== PÚRPURAS Y MAGENTAS ====================
+      { id: 'cit-naggaroth', brand: 'Citadel', range: 'Base', name_es: 'Noche de Naggaroth', name_en: 'Naggaroth Night', code: '21-06', type: 'Base', hex: '#3B234A' },
+      { id: 'cit-xereus', brand: 'Citadel', range: 'Layer', name_es: 'Púrpura Xereus', name_en: 'Xereus Purple', code: '22-09', type: 'Base', hex: '#5A2C6D' },
+      { id: 'cit-screamer', brand: 'Citadel', range: 'Base', name_es: 'Rosa Aullador', name_en: 'Screamer Pink', code: '21-05', type: 'Base', hex: '#7A1D44' },
+      { id: 'vgc-hexedlichen', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Liquen Maldito / Púrpura', name_en: 'Hexed Lichen', code: '72.015', type: 'Base', hex: '#562968' },
+      { id: 'gsw-royalpurple', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Púrpura Real', name_en: 'Royal Purple', code: '1768', type: 'Base', hex: '#582B6B' },
+
+      // ==================== HUESOS, CREMAS Y PIELES ====================
+      { id: 'cit-ushabti', brand: 'Citadel', range: 'Layer', name_es: 'Hueso Ushabti', name_en: 'Ushabti Bone', code: '22-33', type: 'Base', hex: '#D8CFA6' },
+      { id: 'cit-wraithbone', brand: 'Citadel', range: 'Base', name_es: 'Hueso Espectral', name_en: 'Wraithbone', code: '21-52', type: 'Base', hex: '#E5DEC3' },
+      { id: 'cit-cadian', brand: 'Citadel', range: 'Layer', name_es: 'Carne de Cadia', name_en: 'Cadian Fleshtone', code: '22-38', type: 'Base', hex: '#C88868' },
+      { id: 'cit-bugmans', brand: 'Citadel', range: 'Base', name_es: 'Brillo de Bugman', name_en: "Bugman's Glow", code: '21-19', type: 'Base', hex: '#884E43' },
+      { id: 'vmc-ivory', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Marfil', name_en: 'Ivory', code: '70.918', type: 'Base', hex: '#EAE3C8' },
+      { id: 'vmc-pale-sand', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Arena Clara', name_en: 'Pale Sand', code: '70.837', type: 'Base', hex: '#DFC99B' },
+      { id: 'vgc-bonewhite', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Blanco Hueso', name_en: 'Bone White', code: '72.034', type: 'Base', hex: '#DAD1A8' },
+      { id: 'vgc-dwarfskin', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Piel de Enano', name_en: 'Dwarf Skin', code: '72.041', type: 'Base', hex: '#C68565' },
+      { id: 'gsw-bleachedbone', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Hueso Blanqueado', name_en: 'Bleached Bone', code: '1755', type: 'Base', hex: '#DBD1A7' },
+      { id: 'gsw-ivorytusk', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Colmillo de Marfil', name_en: 'Ivory Tusk', code: '1754', type: 'Base', hex: '#E8E0C4' },
+      { id: 'ak-decompflesh', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Hueso / Arena Clara', name_en: 'Decomposed Flesh / Bone', code: 'AK11048', type: 'Base', hex: '#D8CEA4' },
+      { id: 'ap-skeletonbone', brand: 'The Army Painter', range: 'Warpaints Fanatic', name_es: 'Hueso de Esqueleto', name_en: 'Skeleton Bone', code: 'WP3081', type: 'Base', hex: '#D7CEA5' },
+
+      // ==================== MARRONES Y CUEROS ====================
+      { id: 'cit-mournfang', brand: 'Citadel', range: 'Base', name_es: 'Marrón Colmillo Fúnebre', name_en: 'Mournfang Brown', code: '21-22', type: 'Base', hex: '#63331C' },
+      { id: 'cit-rhinox', brand: 'Citadel', range: 'Base', name_es: 'Piel de Rhinox', name_en: 'Rhinox Hide', code: '21-23', type: 'Base', hex: '#3D231C' },
+      { id: 'cit-xv88', brand: 'Citadel', range: 'Base', name_es: 'Marrón XV-88', name_en: 'XV-88', code: '21-21', type: 'Base', hex: '#754C29' },
+      { id: 'vmc-flatbrown', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Marrón Mate', name_en: 'Flat Brown', code: '70.984', type: 'Base', hex: '#653520' },
+      { id: 'vmc-chocolate', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Marrón Chocolate', name_en: 'Chocolate Brown', code: '70.872', type: 'Base', hex: '#42261E' },
+      { id: 'vgc-beastybrown', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Marrón Bestia', name_en: 'Beasty Brown', code: '72.043', type: 'Base', hex: '#64351E' },
+      { id: 'vgc-charredbrown', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Marrón Carbonizado', name_en: 'Charred Brown', code: '72.045', type: 'Base', hex: '#3B221B' },
+      { id: 'gsw-leatherbrown', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Marrón Cuero', name_en: 'Leather Brown', code: '1791', type: 'Base', hex: '#65341D' },
+      { id: 'gsw-darkwood', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Madera Oscura', name_en: 'Dark Wood', code: '1794', type: 'Base', hex: '#3E231C' },
+      { id: 'ak-mahogany', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Marrón Caoba', name_en: 'Mahogany Brown', code: 'AK11108', type: 'Base', hex: '#62321C' },
+
+      // ==================== NEGROS, BLANCOS Y GRISES ====================
+      { id: 'cit-abaddon', brand: 'Citadel', range: 'Base', name_es: 'Negro Abaddon', name_en: 'Abaddon Black', code: '21-25', type: 'Base', hex: '#141518' },
+      { id: 'cit-corax', brand: 'Citadel', range: 'Base', name_es: 'Blanco Corax', name_en: 'Corax White', code: '21-51', type: 'Base', hex: '#F2F3F5' },
+      { id: 'cit-mechanicus', brand: 'Citadel', range: 'Base', name_es: 'Gris Estándar Mechanicus', name_en: 'Mechanicus Standard Grey', code: '21-24', type: 'Base', hex: '#4B5054' },
+      { id: 'cit-dawnstone', brand: 'Citadel', range: 'Layer', name_es: 'Piedra del Alba', name_en: 'Dawnstone', code: '22-49', type: 'Base', hex: '#7A8084' },
+      { id: 'vmc-black', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Negro', name_en: 'Black', code: '70.950', type: 'Base', hex: '#151619' },
+      { id: 'vmc-white', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Blanco', name_en: 'White', code: '70.951', type: 'Base', hex: '#F6F7F9' },
+      { id: 'vmc-neutralgrey', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Gris Neutral', name_en: 'Neutral Grey', code: '70.992', type: 'Base', hex: '#676C70' },
+      { id: 'vgc-deadwhite', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Blanco Calavera', name_en: 'Dead White', code: '72.001', type: 'Base', hex: '#F7F8FA' },
+      { id: 'gsw-black', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Negro Puro', name_en: 'Black', code: '1751', type: 'Base', hex: '#131417' },
+      { id: 'gsw-white', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Blanco Puro', name_en: 'White', code: '1752', type: 'Base', hex: '#F5F6F8' },
+      { id: 'gsw-wolfgrey', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Gris Lobo', name_en: 'Wolf Grey', code: '1802', type: 'Base', hex: '#4E5358' },
+      { id: 'ak-intenseblack', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Negro Intenso', name_en: 'Intense Black', code: 'AK11029', type: 'Base', hex: '#121316' },
+
+      // ==================== METÁLICOS (ACEROS, OROS, BRONCES) ====================
+      { id: 'cit-leadbelcher', brand: 'Citadel', range: 'Base', name_es: 'Escupelomo / Acero Oscuro', name_en: 'Leadbelcher', code: '21-28', type: 'Metálico', hex: '#696F75' },
+      { id: 'cit-ironbreaker', brand: 'Citadel', range: 'Layer', name_es: 'Rompehierros', name_en: 'Ironbreaker', code: '22-59', type: 'Metálico', hex: '#949A9F' },
+      { id: 'cit-stormhost', brand: 'Citadel', range: 'Layer', name_es: 'Plata Stormhost', name_en: 'Stormhost Silver', code: '22-60', type: 'Metálico', hex: '#C7CDD2' },
+      { id: 'cit-retributor', brand: 'Citadel', range: 'Base', name_es: 'Armadura Retributor / Oro', name_en: 'Retributor Armour', code: '21-35', type: 'Metálico', hex: '#C69636' },
+      { id: 'cit-balthasar', brand: 'Citadel', range: 'Base', name_es: 'Oro Balthasar / Bronce', name_en: 'Balthasar Gold', code: '21-26', type: 'Metálico', hex: '#88593B' },
+      { id: 'vmc-gunmetal', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Gris Metalizado / Acero', name_en: 'Gunmetal Grey', code: '70.863', type: 'Metálico', hex: '#646A70' },
+      { id: 'vmc-silver', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Plata', name_en: 'Silver', code: '70.997', type: 'Metálico', hex: '#BFC5CA' },
+      { id: 'vmc-oldgold', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Oro Viejo', name_en: 'Old Gold', code: '70.878', type: 'Metálico', hex: '#B88A34' },
+      { id: 'vgc-gloriousgold', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Oro Glorioso', name_en: 'Glorious Gold', code: '72.056', type: 'Metálico', hex: '#C99838' },
+      { id: 'vgc-chainmail', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Malla de Acero', name_en: 'Chainmail Silver', code: '72.053', type: 'Metálico', hex: '#969CA1' },
+      { id: 'gsw-anthracite', brand: 'Green Stuff World', range: 'Metal Color', name_es: 'Metal Antracita', name_en: 'Anthracite Metal', code: '1861', type: 'Metálico', hex: '#63696F' },
+      { id: 'gsw-quicksilver', brand: 'Green Stuff World', range: 'Metal Color', name_es: 'Plata Viva / Mercurio', name_en: 'Quicksilver', code: '1863', type: 'Metálico', hex: '#C4CACF' },
+      { id: 'gsw-shinygold', brand: 'Green Stuff World', range: 'Metal Color', name_es: 'Oro Brillante', name_en: 'Shiny Gold', code: '1866', type: 'Metálico', hex: '#C89737' },
+      { id: 'gsw-gladiatorbronze', brand: 'Green Stuff World', range: 'Metal Color', name_es: 'Bronce Gladiador', name_en: 'Gladiator Bronze', code: '1869', type: 'Metálico', hex: '#8A5B3C' },
+      { id: 'ak-gunmetal', brand: 'AK 3rd Gen', range: '3rd Gen Metallic', name_es: 'Acero Pavonado / Gunmetal', name_en: 'Gunmetal', code: 'AK11212', type: 'Metálico', hex: '#666C72' },
+      { id: 'ap-greedy-gold', brand: 'The Army Painter', range: 'Warpaints Fanatic', name_es: 'Oro Codicioso', name_en: 'Greedy Gold', code: 'WP3194', type: 'Metálico', hex: '#C59536' },
+
+      // ==================== WASHES / TINTAS Y CONTRAST / XPRESS ====================
+      { id: 'cit-nuln', brand: 'Citadel', range: 'Shade', name_es: 'Aceite Nuln (Tinta Negra)', name_en: 'Nuln Oil', code: '24-14', type: 'Wash / Tinta', hex: '#1E2024' },
+      { id: 'cit-agrax', brand: 'Citadel', range: 'Shade', name_es: 'Sombra Tierra Agrax', name_en: 'Agrax Earthshade', code: '24-15', type: 'Wash / Tinta', hex: '#3D2B1D' },
+      { id: 'cit-reikland', brand: 'Citadel', range: 'Shade', name_es: 'Sombra Carne Reikland', name_en: 'Reikland Fleshshade', code: '24-24', type: 'Wash / Tinta', hex: '#6F3424' },
+      { id: 'cit-bloodangels', brand: 'Citadel', range: 'Contrast', name_es: 'Rojo Ángeles Sangrientos', name_en: 'Blood Angels Red', code: '29-12', type: 'Contrast / Xpress', hex: '#A8181B' },
+      { id: 'cit-skeletonhorde', brand: 'Citadel', range: 'Contrast', name_es: 'Horda Esqueleto', name_en: 'Skeleton Horde', code: '29-26', type: 'Contrast / Xpress', hex: '#A58E63' },
+      { id: 'vgc-blackwash', brand: 'Vallejo Game Color', range: 'Wash', name_es: 'Lavado Negro', name_en: 'Black Wash', code: '73.201', type: 'Wash / Tinta', hex: '#202226' },
+      { id: 'vgc-umberwash', brand: 'Vallejo Game Color', range: 'Wash', name_es: 'Lavado Sombra Tostada', name_en: 'Umber Wash', code: '73.203', type: 'Wash / Tinta', hex: '#3F2C1E' },
+      { id: 'vgc-xpress-velvetred', brand: 'Vallejo Game Color', range: 'Xpress Color', name_es: 'Rojo Terciopelo (Xpress)', name_en: 'Velvet Red', code: '72.408', type: 'Contrast / Xpress', hex: '#A3191D' },
+      { id: 'gsw-darkshade', brand: 'Green Stuff World', range: 'Inks / Washes', name_es: 'Tinta Sombra Oscura', name_en: 'Dark Shade Wash', code: '2011', type: 'Wash / Tinta', hex: '#1F2125' },
+      { id: 'gsw-sepiawash', brand: 'Green Stuff World', range: 'Inks / Washes', name_es: 'Tinta Sepia Marrón', name_en: 'Sepia Wash', code: '2013', type: 'Wash / Tinta', hex: '#412D1E' },
+      { id: 'ap-darktone', brand: 'The Army Painter', range: 'Warpaints Wash', name_es: 'Tono Oscuro (Tinta)', name_en: 'Dark Tone Wash', code: 'WP3165', type: 'Wash / Tinta', hex: '#1E2024' },
+      { id: 'ap-strongtone', brand: 'The Army Painter', range: 'Warpaints Wash', name_es: 'Tono Fuerte (Tinta Marrón)', name_en: 'Strong Tone Wash', code: 'WP3166', type: 'Wash / Tinta', hex: '#3E2B1C' }
+    ];
+
+    const ALL_BRANDS = [
+      'Citadel',
+      'Vallejo Model Color',
+      'Vallejo Game Color',
+      'Green Stuff World',
+      'AK 3rd Gen',
+      'The Army Painter'
+    ];
+
+    const ALL_TYPES = [
+      'Base',
+      'Metálico',
+      'Wash / Tinta',
+      'Contrast / Xpress'
+    ];
+
+    const state = {
+      searchQuery: '',
+      activeBrands: new Set(ALL_BRANDS),
+      activeTypes: new Set(ALL_TYPES),
+      referencePaint: PAINT_DATABASE[0],
+      isCustomColorMode: false,
+      customHex: '#9A1B1E',
+      sameFinishOnly: true,
+      excludeSameBrand: false,
+      cbEnabled: false,
+      cbType: 'deuteranomaly',
+      cbMode: 'correct',
+      cbSplitSwatch: true
+    };
+
+    const COLORBLIND_PROFILES = {
+      none: {
+        name: 'Visión tricromática estándar',
+        desc: 'Sin alteración cromática activa.'
+      },
+      deuteranomaly: {
+        name: 'Deuteranomalía (Debilidad al verde)',
+        desc: 'Desplaza el espectro verde-rojo hacia luminancias y azules distinguibles.'
+      },
+      deuteranopia: {
+        name: 'Deuteranopía (Ceguera al verde · M-cone)',
+        desc: 'Redistribuye el canal M (verde) perdido hacia canales R y B para evitar confusión rojo/verde.'
+      },
+      protanomaly: {
+        name: 'Protanomalía (Debilidad al rojo)',
+        desc: 'Refuerza la luminancia y el contraste azul/amarillo de los tonos rojos oscuros.'
+      },
+      protanopia: {
+        name: 'Protanopía (Ceguera al rojo · L-cone)',
+        desc: 'Transfiere la información del cono L perdido hacia variaciones de azul y brillo.'
+      },
+      tritanomaly: {
+        name: 'Tritanomalía (Debilidad azul/amarillo)',
+        desc: 'Aumenta la separación entre azules/verdes y amarillos/rosas.'
+      },
+      tritanopia: {
+        name: 'Tritanopía (Ceguera azul/amarillo · S-cone)',
+        desc: 'Desplaza el espectro azul-amarillo perdido hacia el eje rojo-cian.'
+      },
+      achromatomaly: {
+        name: 'Acromatomalía (Monocromatismo parcial)',
+        desc: 'Maximiza el contraste tonal y las etiquetas de familia cromática.'
+      },
+      achromatopsia: {
+        name: 'Acromatopsia (Monocromatismo total)',
+        desc: 'Optimiza la separación por luminancia y códigos textuales/geométricos.'
+      }
+    };
+
+    // ==================== UTILIDADES DE CONVERSIÓN DE COLOR Y CIELAB DELTA-E ====================
+
+    function hexToRgb(hex) {
+      const clean = (hex || '#000000').replace('#', '').trim();
+      const full = clean.length === 3
+        ? clean.split('').map(c => c + c).join('')
+        : clean.padEnd(6, '0');
+      const num = parseInt(full, 16);
+      return {
+        r: (num >> 16) & 255,
+        g: (num >> 8) & 255,
+        b: num & 255
+      };
+    }
+
+    function rgbToHex({ r, g, b }) {
+      const toHex = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+    }
+
+    function srgbToLinear(c) {
+      const v = c / 255;
+      return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    }
+
+    function linearToSrgb(v) {
+      const clamped = Math.max(0, Math.min(1, v));
+      const s = clamped <= 0.0031308 ? 12.92 * clamped : 1.055 * Math.pow(clamped, 1 / 2.4) - 0.055;
+      return Math.round(s * 255);
+    }
+
+    function rgbToLab({ r, g, b }) {
+      const lr = srgbToLinear(r);
+      const lg = srgbToLinear(g);
+      const lb = srgbToLinear(b);
+
+      // sRGB lineal -> XYZ (D65)
+      let x = (lr * 0.4124564 + lg * 0.3575761 + lb * 0.1804375) / 0.95047;
+      let y = (lr * 0.2126729 + lg * 0.7151522 + lb * 0.0721750) / 1.00000;
+      let z = (lr * 0.0193339 + lg * 0.1191920 + lb * 0.9503041) / 1.08883;
+
+      const f = (t) => t > 0.008856 ? Math.cbrt(t) : (7.787 * t) + (16 / 116);
+      x = f(x);
+      y = f(y);
+      z = f(z);
+
+      return {
+        L: (116 * y) - 16,
+        a: 500 * (x - y),
+        b: 200 * (y - z)
+      };
+    }
+
+    function calculateDeltaE(hex1, hex2) {
+      const lab1 = rgbToLab(hexToRgb(hex1));
+      const lab2 = rgbToLab(hexToRgb(hex2));
+      const dL = lab1.L - lab2.L;
+      const da = lab1.a - lab2.a;
+      const db = lab1.b - lab2.b;
+      return Math.sqrt(dL * dL + da * da + db * db);
+    }
+
+    function rgbToHsl({ r, g, b }) {
+      const rn = r / 255, gn = g / 255, bn = b / 255;
+      const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn);
+      let h = 0, s = 0;
+      const l = (max + min) / 2;
+
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case rn: h = ((gn - bn) / d + (gn < bn ? 6 : 0)) * 60; break;
+          case gn: h = ((bn - rn) / d + 2) * 60; break;
+          case bn: h = ((rn - gn) / d + 4) * 60; break;
+        }
+      }
+      return { h, s, l };
+    }
+
+    // ==================== MOTOR MATEMÁTICO DE DALTONISMO (SIMULACIÓN Y DALTONIZACIÓN LMS) ====================
+
+    function simulateColorBlindness(rgb, type) {
+      if (!type || type === 'none') return { ...rgb };
+
+      const lr = srgbToLinear(rgb.r);
+      const lg = srgbToLinear(rgb.g);
+      const lb = srgbToLinear(rgb.b);
+
+      const L = 0.31399022 * lr + 0.63951294 * lg + 0.04649755 * lb;
+      const M = 0.15537241 * lr + 0.75789446 * lg + 0.08670142 * lb;
+      const S = 0.01775239 * lr + 0.10944209 * lg + 0.87256922 * lb;
+
+      let simL = L, simM = M, simS = S;
+
+      const protanL = 0.0 * L + 1.05118294 * M - 0.05116099 * S;
+      const deuteranM = 0.9513092 * L + 0.0 * M + 0.04866992 * S;
+      const tritanS = -0.86744736 * L + 1.76727717 * M + 0.0 * S;
+
+      switch (type) {
+        case 'protanopia': simL = protanL; break;
+        case 'protanomaly': simL = 0.45 * L + 0.55 * protanL; break;
+        case 'deuteranopia': simM = deuteranM; break;
+        case 'deuteranomaly': simM = 0.45 * M + 0.55 * deuteranM; break;
+        case 'tritanopia': simS = tritanS; break;
+        case 'tritanomaly': simS = 0.45 * S + 0.55 * tritanS; break;
+        case 'achromatopsia': {
+          const lum = 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+          const gray = linearToSrgb(lum);
+          return { r: gray, g: gray, b: gray };
+        }
+        case 'achromatomaly': {
+          const lum = 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+          return {
+            r: linearToSrgb(0.32 * lr + 0.68 * lum),
+            g: linearToSrgb(0.32 * lg + 0.68 * lum),
+            b: linearToSrgb(0.32 * lb + 0.68 * lum)
+          };
+        }
+      }
+
+      const outR = 5.47221206 * simL - 4.6419601 * simM + 0.16963708 * simS;
+      const outG = -1.1252419 * simL + 2.29317094 * simM - 0.1678952 * simS;
+      const outB = 0.02980165 * simL - 0.19318073 * simM + 1.16364789 * simS;
+
+      return {
+        r: linearToSrgb(outR),
+        g: linearToSrgb(outG),
+        b: linearToSrgb(outB)
+      };
+    }
+
+    function daltonizeColor(rgb, type) {
+      if (!type || type === 'none') return { ...rgb };
+
+      const sim = simulateColorBlindness(rgb, type);
+      const errR = rgb.r - sim.r;
+      const errG = rgb.g - sim.g;
+      const errB = rgb.b - sim.b;
+
+      let corrR = rgb.r;
+      let corrG = rgb.g;
+      let corrB = rgb.b;
+
+      if (type === 'protanopia' || type === 'protanomaly') {
+        corrR = rgb.r + 0.15 * errR;
+        corrG = rgb.g + 0.75 * errR + 0.2 * errG;
+        corrB = rgb.b + 0.85 * errR + 0.3 * errG;
+      } else if (type === 'deuteranopia' || type === 'deuteranomaly') {
+        corrR = rgb.r + 0.75 * errG + 0.2 * errR;
+        corrG = rgb.g + 0.15 * errG;
+        corrB = rgb.b + 0.85 * errG + 0.3 * errR;
+      } else if (type === 'tritanopia' || type === 'tritanomaly') {
+        corrR = rgb.r + 0.80 * errB;
+        corrG = rgb.g + 0.75 * errB;
+        corrB = rgb.b + 0.15 * errB;
+      } else if (type === 'achromatopsia' || type === 'achromatomaly') {
+        const { h, l } = rgbToHsl(rgb);
+        const hueBias = Math.sin((h * Math.PI) / 180) * 28;
+        const lum = Math.max(12, Math.min(244, l * 255 + hueBias));
+        return { r: lum, g: lum, b: lum };
+      }
+
+      return {
+        r: Math.max(0, Math.min(255, Math.round(corrR))),
+        g: Math.max(0, Math.min(255, Math.round(corrG))),
+        b: Math.max(0, Math.min(255, Math.round(corrB)))
+      };
+    }
+
+    function getProcessedHex(originalHex) {
+      if (!state.cbEnabled || state.cbType === 'none') return originalHex;
+      const rgb = hexToRgb(originalHex);
+      const outRgb = state.cbMode === 'simulate'
+        ? simulateColorBlindness(rgb, state.cbType)
+        : daltonizeColor(rgb, state.cbType);
+      return rgbToHex(outRgb);
+    }
+
+    function getColorFamilyTag(hex, paintType = 'Base') {
+      if (paintType === 'Metálico') {
+        const { h, s } = rgbToHsl(hexToRgb(hex));
+        if (s > 0.25 && h >= 20 && h <= 55) return { code: 'MET·ORO', label: 'Metálico Dorado/Bronce' };
+        return { code: 'MET·ACR', label: 'Metálico Acero/Plata' };
+      }
+
+      const { h, s, l } = rgbToHsl(hexToRgb(hex));
+
+      if (l <= 0.13) return { code: 'NEG', label: 'Negro' };
+      if (l >= 0.90 && s <= 0.20) return { code: 'BLA', label: 'Blanco' };
+      if (s <= 0.14) return { code: 'GRI', label: 'Gris' };
+
+      if (l >= 0.72 && h >= 28 && h <= 58 && s <= 0.52) {
+        return { code: 'HUE', label: 'Hueso / Crema' };
+      }
+      if ((h >= 12 && h <= 42) && l < 0.45) {
+        return { code: 'MAR', label: 'Marrón / Tierra' };
+      }
+
+      if (h < 15 || h >= 340) return { code: 'ROJ', label: 'Rojo' };
+      if (h >= 15 && h < 42) return { code: 'NAR', label: 'Naranja' };
+      if (h >= 42 && h < 68) return { code: 'AMR', label: 'Amarillo' };
+      if (h >= 68 && h < 165) return { code: 'VRD', label: 'Verde' };
+      if (h >= 165 && h < 200) return { code: 'TRQ', label: 'Turquesa / Cian' };
+      if (h >= 200 && h < 260) return { code: 'AZL', label: 'Azul' };
+      if (h >= 260 && h < 310) return { code: 'VIO', label: 'Púrpura / Violeta' };
+      return { code: 'ROS', label: 'Magenta / Rosa' };
+    }
+
+    function getSwatchTextureClass(type) {
+      if (type === 'Metálico') return 'swatch-metallic';
+      if (type === 'Wash / Tinta' || type === 'Contrast / Xpress') return 'swatch-wash';
+      return '';
+    }
+
+    function getMatchBadge(deltaE) {
+      if (deltaE <= 3.0) {
+        return {
+          label: 'Exacta',
+          symbol: '●',
+          classes: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/35'
+        };
+      }
+      if (deltaE <= 7.5) {
+        return {
+          label: 'Muy Cercana',
+          symbol: '◆',
+          classes: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/35'
+        };
+      }
+      if (deltaE <= 14.0) {
+        return {
+          label: 'Aproximada',
+          symbol: '▲',
+          classes: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/35'
+        };
+      }
+      return {
+        label: 'Alternativa',
+        symbol: '■',
+        classes: 'bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/35'
+      };
+    }
+
+    function normalizeText(str) {
+      return (str || '')
+        .toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toastNotification');
+      const msgEl = document.getElementById('toastMessage');
+      if (!toast || !msgEl) return;
+      msgEl.textContent = message;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2200);
+    }
+
+    function copyTextToClipboard(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast(`Copiado: ${text}`);
+      } catch (e) {
+        showToast('No se pudo copiar');
+      }
+      document.body.removeChild(textarea);
+    }
+
+    // ==================== RENDERIZADO DE FILTROS Y CATÁLOGO ====================
+
+    function renderFilterPills() {
+      const brandContainer = document.getElementById('brandFiltersContainer');
+      const typeContainer = document.getElementById('typeFiltersContainer');
+
+      brandContainer.innerHTML = ALL_BRANDS.map(brand => {
+        const active = state.activeBrands.has(brand);
+        return `
+          <button type="button" data-brand="${brand}"
+            class="brand-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+              active
+                ? 'bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-500/20'
+                : 'bg-slate-100 dark:bg-studio-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-studio-700 hover:border-amber-400'
+            }">
+            ${brand}
+          </button>
+        `;
+      }).join('');
+
+      typeContainer.innerHTML = ALL_TYPES.map(type => {
+        const active = state.activeTypes.has(type);
+        return `
+          <button type="button" data-type="${type}"
+            class="type-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+              active
+                ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-slate-800 dark:border-slate-200 shadow-sm'
+                : 'bg-slate-100 dark:bg-studio-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-studio-700 hover:border-slate-400'
+            }">
+            ${type}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function renderCatalog() {
+      const grid = document.getElementById('paintCatalogGrid');
+      const emptyState = document.getElementById('emptyCatalogState');
+      const countLabel = document.getElementById('filteredCountLabel');
+      const totalLabel = document.getElementById('totalPaintsLabel');
+
+      if (totalLabel) totalLabel.textContent = PAINT_DATABASE.length;
+
+      const query = normalizeText(state.searchQuery.trim());
+
+      const filtered = PAINT_DATABASE.filter(paint => {
+        if (!state.activeBrands.has(paint.brand)) return false;
+        if (!state.activeTypes.has(paint.type)) return false;
+
+        if (!query) return true;
+        const haystack = normalizeText(
+          `${paint.name_es} ${paint.name_en} ${paint.code} ${paint.brand} ${paint.range} ${paint.hex}`
+        );
+        return query.split(/\s+/).every(token => haystack.includes(token));
+      });
+
+      countLabel.textContent = `${filtered.length} ${filtered.length === 1 ? 'resultado' : 'resultados'}`;
+
+      if (filtered.length === 0) {
+        grid.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      grid.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+
+      grid.innerHTML = filtered.map(paint => {
+        const isSelected = !state.isCustomColorMode && state.referencePaint && state.referencePaint.id === paint.id;
+        const textureClass = getSwatchTextureClass(paint.type);
+        const processedHex = getProcessedHex(paint.hex);
+        const showSplit = state.cbEnabled && state.cbType !== 'none' && state.cbSplitSwatch;
+        const familyTag = getColorFamilyTag(paint.hex, paint.type);
+
+        const swatchHtml = showSplit
+          ? `
+            <div class="w-16 h-14 rounded-xl shrink-0 border border-black/20 dark:border-white/15 shadow-inner relative overflow-hidden flex" title="Izq: Original (${paint.hex}) · Der: ${state.cbMode === 'simulate' ? 'Simulado' : 'Corregido'} (${processedHex})">
+              <div class="w-1/2 h-full ${textureClass}" style="background-color: ${paint.hex};"></div>
+              <div class="w-1/2 h-full ${textureClass} border-l border-white/30" style="background-color: ${processedHex};"></div>
+              <span class="absolute top-1 left-1 px-1 rounded bg-black/65 text-[9px] font-mono font-extrabold text-white tracking-tight">${familyTag.code}</span>
+              ${paint.type !== 'Base' ? `<span class="absolute bottom-1 right-1 px-1 rounded bg-black/60 text-[8px] font-bold text-white uppercase">${paint.type === 'Metálico' ? 'MET' : 'TINTA'}</span>` : ''}
+            </div>
+          `
+          : `
+            <div class="w-16 h-14 rounded-xl shrink-0 border border-black/15 dark:border-white/15 shadow-inner relative overflow-hidden ${textureClass}"
+              style="background-color: ${processedHex};">
+              <span class="absolute top-1 left-1 px-1 rounded bg-black/60 text-[9px] font-mono font-extrabold text-white tracking-tight">${familyTag.code}</span>
+              ${paint.type !== 'Base' ? `<span class="absolute bottom-1 right-1 px-1 rounded bg-black/60 text-[8px] font-bold text-white uppercase">${paint.type === 'Metálico' ? 'MET' : 'TINTA'}</span>` : ''}
+            </div>
+          `;
+
+        return `
+          <div data-paint-id="${paint.id}"
+            class="paint-card group cursor-pointer rounded-2xl p-3 bg-white dark:bg-studio-900 border transition-all duration-150 flex items-center gap-3.5 ${
+              isSelected
+                ? 'border-amber-500 ring-2 ring-amber-500/30 shadow-md'
+                : 'border-slate-200 dark:border-studio-700/80 hover:border-amber-400 dark:hover:border-amber-500/60 hover:shadow-sm'
+            }">
+            ${swatchHtml}
+
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between gap-1.5">
+                <span class="text-[11px] font-semibold text-amber-600 dark:text-amber-400 truncate">
+                  ${paint.brand}
+                </span>
+                <span class="font-mono text-[11px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-studio-800 text-slate-600 dark:text-slate-300 shrink-0">
+                  ${paint.code}
+                </span>
+              </div>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-slate-100 truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                ${paint.name_es}
+              </h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                ${paint.name_en}
+              </p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ==================== RENDERIZADO DE PANEL DE REFERENCIA Y EQUIVALENCIAS ====================
+
+    function renderReferencePanel() {
+      const origHalf = document.getElementById('refBannerOriginalHalf');
+      const assistHalf = document.getElementById('refBannerAssistedHalf');
+      const origTag = document.getElementById('refOriginalTag');
+      const assistTag = document.getElementById('refAssistedTag');
+      const brandBadge = document.getElementById('refBrandBadge');
+      const familyBadge = document.getElementById('refFamilyBadge');
+      const hexText = document.getElementById('refHexText');
+      const nameEs = document.getElementById('refNameEs');
+      const nameEn = document.getElementById('refNameEn');
+      const codeBadge = document.getElementById('refCodeBadge');
+      const typeLabel = document.getElementById('refTypeLabel');
+
+      origHalf.classList.remove('swatch-metallic', 'swatch-wash');
+      assistHalf.classList.remove('swatch-metallic', 'swatch-wash');
+
+      const rawHex = state.isCustomColorMode ? state.customHex : state.referencePaint.hex;
+      const paintType = state.isCustomColorMode ? 'Base' : state.referencePaint.type;
+      const processedHex = getProcessedHex(rawHex);
+      const cbActive = state.cbEnabled && state.cbType !== 'none';
+      const family = getColorFamilyTag(rawHex, paintType);
+
+      familyBadge.textContent = `[${family.code}]`;
+      familyBadge.title = `Familia cromática: ${family.label}`;
+
+      if (!state.isCustomColorMode) {
+        const tex = getSwatchTextureClass(paintType);
+        if (tex) {
+          origHalf.classList.add(tex);
+          assistHalf.classList.add(tex);
+        }
+      }
+
+      if (cbActive && state.cbSplitSwatch) {
+        origHalf.style.backgroundColor = rawHex;
+        origHalf.classList.remove('w-full');
+        origHalf.classList.add('w-1/2');
+        origTag.classList.remove('hidden');
+
+        assistHalf.style.backgroundColor = processedHex;
+        assistHalf.classList.remove('hidden');
+        assistTag.textContent = state.cbMode === 'simulate' ? 'Simulado' : 'Corregido';
+      } else {
+        origHalf.style.backgroundColor = cbActive ? processedHex : rawHex;
+        origHalf.classList.remove('w-1/2');
+        origHalf.classList.add('w-full');
+        origTag.classList.add('hidden');
+        assistHalf.classList.add('hidden');
+      }
+
+      if (state.isCustomColorMode) {
+        brandBadge.textContent = 'Muestra Personalizada';
+        hexText.textContent = rawHex.toUpperCase();
+        nameEs.textContent = 'Color Personalizado (HEX)';
+        nameEn.textContent = 'Búsqueda visual directa en todas las gamas';
+        codeBadge.textContent = 'CUSTOM';
+        typeLabel.textContent = 'Cualquier acabado';
+      } else {
+        const p = state.referencePaint;
+        brandBadge.textContent = `${p.brand} · ${p.range}`;
+        hexText.textContent = p.hex.toUpperCase();
+        nameEs.textContent = p.name_es;
+        nameEn.textContent = p.name_en;
+        codeBadge.textContent = p.code;
+        typeLabel.textContent = p.type;
+      }
+    }
+
+    function renderEquivalents() {
+      const listContainer = document.getElementById('equivalentsList');
+      const subtitle = document.getElementById('equivalentsSubtitle');
+      const refHex = state.isCustomColorMode ? state.customHex : state.referencePaint.hex;
+      const refType = state.isCustomColorMode ? null : state.referencePaint.type;
+      const refBrand = state.isCustomColorMode ? null : state.referencePaint.brand;
+      const refId = state.isCustomColorMode ? null : state.referencePaint.id;
+
+      const cbActive = state.cbEnabled && state.cbType !== 'none';
+      const displayRefHex = getProcessedHex(refHex);
+      const refSimHex = cbActive ? rgbToHex(simulateColorBlindness(hexToRgb(refHex), state.cbType)) : refHex;
+
+      subtitle.textContent = cbActive
+        ? `Muestra partida (${state.cbMode === 'simulate' ? 'Simulación' : 'Corrección LMS'}) · Incluye ΔE percibido`
+        : 'Comparación visual partida (Izq: Referencia · Der: Equivalente)';
+
+      const candidates = PAINT_DATABASE
+        .filter(p => {
+          if (refId && p.id === refId) return false;
+          if (state.excludeSameBrand && refBrand && p.brand === refBrand) return false;
+          if (state.sameFinishOnly && refType && p.type !== refType) return false;
+          return true;
+        })
+        .map(p => {
+          const deltaE = calculateDeltaE(refHex, p.hex);
+          let perceivedDeltaE = deltaE;
+          if (cbActive) {
+            const matchSimHex = rgbToHex(simulateColorBlindness(hexToRgb(p.hex), state.cbType));
+            perceivedDeltaE = calculateDeltaE(refSimHex, matchSimHex);
+          }
+          return {
+            ...p,
+            deltaE,
+            perceivedDeltaE
+          };
+        })
+        .sort((a, b) => a.deltaE - b.deltaE)
+        .slice(0, 14);
+
+      if (candidates.length === 0) {
+        listContainer.innerHTML = `
+          <div class="p-6 text-center text-xs text-slate-500 dark:text-slate-400">
+            No hay equivalencias disponibles con los filtros actuales. Desactiva "Mismo acabado" u "Otras marcas".
+          </div>
+        `;
+        return;
+      }
+
+      listContainer.innerHTML = candidates.map(match => {
+        const badge = getMatchBadge(match.deltaE);
+        const refTexture = refType ? getSwatchTextureClass(refType) : '';
+        const matchTexture = getSwatchTextureClass(match.type);
+        const displayMatchHex = getProcessedHex(match.hex);
+        const family = getColorFamilyTag(match.hex, match.type);
+        const confusionWarning = cbActive && match.deltaE > 6.5 && match.perceivedDeltaE < 3.0;
+
+        return `
+          <div class="rounded-xl p-3 bg-slate-50 dark:bg-studio-800/80 border border-slate-200/80 dark:border-studio-700/80 hover:border-amber-500/50 transition flex items-center gap-3">
+            <div class="w-16 h-14 rounded-xl overflow-hidden shrink-0 flex relative border border-black/20 dark:border-white/15 shadow-inner" title="Izquierda: Referencia (${displayRefHex}) | Derecha: ${match.name_es} (${displayMatchHex})">
+              <div class="w-1/2 h-full ${refTexture}" style="background-color: ${displayRefHex};"></div>
+              <div class="w-1/2 h-full ${matchTexture} border-l border-white/25" style="background-color: ${displayMatchHex};"></div>
+              <span class="absolute bottom-1 left-1 px-1 rounded bg-black/65 text-[8px] font-mono font-extrabold text-white">${family.code}</span>
+            </div>
+
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between gap-1.5 mb-0.5">
+                <span class="text-[11px] font-bold text-slate-600 dark:text-slate-300 truncate">
+                  ${match.brand}
+                </span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 inline-flex items-center gap-1 ${badge.classes}">
+                  <span>${badge.symbol}</span>
+                  <span>${badge.label} · ΔE ${match.deltaE.toFixed(1)}</span>
+                </span>
+              </div>
+
+              <div class="flex items-baseline justify-between gap-2">
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white truncate">
+                  ${match.name_es}
+                </h4>
+                <button type="button" data-copy="${match.code}" title="Copiar referencia ${match.code}"
+                  class="copy-code-btn font-mono text-[11px] font-semibold px-1.5 py-0.5 rounded bg-white dark:bg-studio-900 border border-slate-200 dark:border-studio-700 hover:border-amber-500 text-slate-700 dark:text-slate-300 shrink-0 transition cursor-pointer">
+                  ${match.code}
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between gap-2 mt-0.5">
+                <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  ${match.name_en}
+                </p>
+                <button type="button" data-select-id="${match.id}"
+                  class="select-match-btn text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline shrink-0 cursor-pointer">
+                  Usar →
+                </button>
+              </div>
+
+              ${cbActive ? `
+                <div class="mt-1.5 pt-1.5 border-t border-slate-200/70 dark:border-studio-700/70 flex items-center justify-between text-[10px]">
+                  <span class="font-mono text-slate-500 dark:text-slate-400">
+                    ΔE percibido (${COLORBLIND_PROFILES[state.cbType].name.split(' ')[0]}): <strong>${match.perceivedDeltaE.toFixed(1)}</strong>
+                  </span>
+                  ${confusionWarning ? `<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold">⚠ Mismo tono percibido</span>` : ''}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ==================== INICIALIZACIÓN Y DELEGACIÓN DE EVENTOS ====================
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('searchInput');
+      const clearSearchBtn = document.getElementById('clearSearchBtn');
+      const customColorPicker = document.getElementById('customColorPicker');
+      const customHexInput = document.getElementById('customHexInput');
+      const applyCustomColorBtn = document.getElementById('applyCustomColorBtn');
+
+      // 1. Buscador en tiempo real
+      searchInput.addEventListener('input', (e) => {
+        state.searchQuery = e.target.value;
+        clearSearchBtn.classList.toggle('hidden', !state.searchQuery);
+        renderCatalog();
+      });
+
+      clearSearchBtn.addEventListener('click', () => {
+        state.searchQuery = '';
+        searchInput.value = '';
+        clearSearchBtn.classList.add('hidden');
+        renderCatalog();
+        searchInput.focus();
+      });
+
+      // Pruebas rápidas (Delegación)
+      document.getElementById('quickSearchContainer').addEventListener('click', (e) => {
+        const btn = e.target.closest('.quick-search');
+        if (!btn) return;
+        const term = btn.getAttribute('data-quick');
+        state.searchQuery = term;
+        searchInput.value = term;
+        clearSearchBtn.classList.remove('hidden');
+        renderCatalog();
+      });
+
+      // 2. Delegación en Filtros de Marca y Acabado
+      document.getElementById('brandFiltersContainer').addEventListener('click', (e) => {
+        const btn = e.target.closest('.brand-filter-btn');
+        if (!btn) return;
+        const brand = btn.getAttribute('data-brand');
+        if (state.activeBrands.has(brand)) {
+          if (state.activeBrands.size > 1) state.activeBrands.delete(brand);
+          else showToast('Debe quedar al menos 1 marca activa');
+        } else {
+          state.activeBrands.add(brand);
+        }
+        renderFilterPills();
+        renderCatalog();
+      });
+
+      document.getElementById('typeFiltersContainer').addEventListener('click', (e) => {
+        const btn = e.target.closest('.type-filter-btn');
+        if (!btn) return;
+        const type = btn.getAttribute('data-type');
+        if (state.activeTypes.has(type)) {
+          if (state.activeTypes.size > 1) state.activeTypes.delete(type);
+          else showToast('Debe quedar al menos 1 tipo activo');
+        } else {
+          state.activeTypes.add(type);
+        }
+        renderFilterPills();
+        renderCatalog();
+      });
+
+      document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+        state.activeBrands = new Set(ALL_BRANDS);
+        state.activeTypes = new Set(ALL_TYPES);
+        renderFilterPills();
+        renderCatalog();
+      });
+
+      document.getElementById('resetAllBtn').addEventListener('click', () => {
+        state.searchQuery = '';
+        searchInput.value = '';
+        clearSearchBtn.classList.add('hidden');
+        state.activeBrands = new Set(ALL_BRANDS);
+        state.activeTypes = new Set(ALL_TYPES);
+        renderFilterPills();
+        renderCatalog();
+      });
+
+      // 3. Delegación en Catálogo de Pinturas (Seleccionar referencia)
+      document.getElementById('paintCatalogGrid').addEventListener('click', (e) => {
+        const card = e.target.closest('.paint-card');
+        if (!card) return;
+        const id = card.getAttribute('data-paint-id');
+        const found = PAINT_DATABASE.find(p => p.id === id);
+        if (!found) return;
+
+        state.referencePaint = found;
+        state.isCustomColorMode = false;
+        customColorPicker.value = found.hex;
+        customHexInput.value = found.hex;
+        renderCatalog();
+        renderReferencePanel();
+        renderEquivalents();
+      });
+
+      // 4. Delegación en Lista de Equivalencias ("Usar →" y Copiar código)
+      document.getElementById('equivalentsList').addEventListener('click', (e) => {
+        const copyBtn = e.target.closest('.copy-code-btn');
+        if (copyBtn) {
+          e.stopPropagation();
+          copyTextToClipboard(copyBtn.getAttribute('data-copy'));
+          return;
+        }
+
+        const useBtn = e.target.closest('.select-match-btn');
+        if (useBtn) {
+          const id = useBtn.getAttribute('data-select-id');
+          const found = PAINT_DATABASE.find(p => p.id === id);
+          if (!found) return;
+          state.referencePaint = found;
+          state.isCustomColorMode = false;
+          customColorPicker.value = found.hex;
+          customHexInput.value = found.hex;
+          renderCatalog();
+          renderReferencePanel();
+          renderEquivalents();
+          showToast(`Referencia cambiada a: ${found.name_es}`);
+        }
+      });
+
+      // 5. Selector de Color Personalizado / HEX
+      customColorPicker.addEventListener('input', (e) => {
+        customHexInput.value = e.target.value.toUpperCase();
+      });
+
+      applyCustomColorBtn.addEventListener('click', () => {
+        let val = customHexInput.value.trim();
+        if (!val.startsWith('#')) val = '#' + val;
+        if (/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(val)) {
+          if (val.length === 4) {
+            val = '#' + val[1] + val[1] + val[2] + val[2] + val[3] + val[3];
+          }
+          state.customHex = val.toUpperCase();
+          state.isCustomColorMode = true;
+          customColorPicker.value = state.customHex;
+          customHexInput.value = state.customHex;
+          renderCatalog();
+          renderReferencePanel();
+          renderEquivalents();
+          showToast(`Comparando muestra HEX ${state.customHex}`);
+        } else {
+          showToast('Código HEX inválido (ej. #9A1B1E)');
+        }
+      });
+
+      // 6. Toggles de comparación y copiado HEX
+      document.getElementById('sameFinishToggle').addEventListener('change', (e) => {
+        state.sameFinishOnly = e.target.checked;
+        renderEquivalents();
+      });
+
+      document.getElementById('excludeSameBrandToggle').addEventListener('change', (e) => {
+        state.excludeSameBrand = e.target.checked;
+        renderEquivalents();
+      });
+
+      document.getElementById('copyRefHexBtn').addEventListener('click', () => {
+        const hex = document.getElementById('refHexText').textContent;
+        copyTextToClipboard(hex);
+      });
+
+      // 7. Cambio de tema Claro / Oscuro
+      document.getElementById('themeToggleBtn').addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
+      });
+
+      // 8. Controles de Accesibilidad para Daltonismo
+      const cbQuickSwitch = document.getElementById('cbQuickSwitch');
+      const cbQuickSwitchKnob = document.getElementById('cbQuickSwitchKnob');
+      const cbTypeSelect = document.getElementById('cbTypeSelect');
+      const cbAssistantBar = document.getElementById('cbAssistantBar');
+      const cbActiveProfileTitle = document.getElementById('cbActiveProfileTitle');
+      const cbActiveProfileDesc = document.getElementById('cbActiveProfileDesc');
+      const cbModeCorrectBtn = document.getElementById('cbModeCorrectBtn');
+      const cbModeSimulateBtn = document.getElementById('cbModeSimulateBtn');
+      const cbSplitSwatchToggle = document.getElementById('cbSplitSwatchToggle');
+
+      function syncColorBlindUI() {
+        const isActive = state.cbEnabled && state.cbType !== 'none';
+
+        cbQuickSwitch.setAttribute('aria-checked', String(isActive));
+        if (isActive) {
+          cbQuickSwitch.classList.remove('bg-slate-300', 'dark:bg-studio-600');
+          cbQuickSwitch.classList.add('bg-amber-500');
+          cbQuickSwitchKnob.classList.remove('translate-x-0');
+          cbQuickSwitchKnob.classList.add('translate-x-4');
+          cbAssistantBar.classList.remove('hidden');
+
+          const profile = COLORBLIND_PROFILES[state.cbType];
+          cbActiveProfileTitle.textContent = profile.name;
+          cbActiveProfileDesc.textContent = profile.desc;
+        } else {
+          cbQuickSwitch.classList.add('bg-slate-300', 'dark:bg-studio-600');
+          cbQuickSwitch.classList.remove('bg-amber-500');
+          cbQuickSwitchKnob.classList.add('translate-x-0');
+          cbQuickSwitchKnob.classList.remove('translate-x-4');
+          cbAssistantBar.classList.add('hidden');
+        }
+
+        cbTypeSelect.value = isActive ? state.cbType : 'none';
+
+        if (state.cbMode === 'correct') {
+          cbModeCorrectBtn.classList.add('bg-amber-500', 'text-white', 'shadow-sm');
+          cbModeCorrectBtn.classList.remove('text-slate-600', 'dark:text-slate-300');
+          cbModeSimulateBtn.classList.remove('bg-amber-500', 'text-white', 'shadow-sm');
+          cbModeSimulateBtn.classList.add('text-slate-600', 'dark:text-slate-300');
+        } else {
+          cbModeSimulateBtn.classList.add('bg-amber-500', 'text-white', 'shadow-sm');
+          cbModeSimulateBtn.classList.remove('text-slate-600', 'dark:text-slate-300');
+          cbModeCorrectBtn.classList.remove('bg-amber-500', 'text-white', 'shadow-sm');
+          cbModeCorrectBtn.classList.add('text-slate-600', 'dark:text-slate-300');
+        }
+
+        renderCatalog();
+        renderReferencePanel();
+        renderEquivalents();
+      }
+
+      cbQuickSwitch.addEventListener('click', () => {
+        if (state.cbEnabled && state.cbType !== 'none') {
+          state.cbEnabled = false;
+        } else {
+          state.cbEnabled = true;
+          if (state.cbType === 'none') state.cbType = 'deuteranomaly';
+        }
+        syncColorBlindUI();
+        showToast(state.cbEnabled ? `Asistencia activa: ${COLORBLIND_PROFILES[state.cbType].name}` : 'Modo daltonismo desactivado');
+      });
+
+      cbTypeSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val === 'none') {
+          state.cbEnabled = false;
+        } else {
+          state.cbEnabled = true;
+          state.cbType = val;
+        }
+        syncColorBlindUI();
+      });
+
+      cbModeCorrectBtn.addEventListener('click', () => {
+        state.cbMode = 'correct';
+        syncColorBlindUI();
+      });
+
+      cbModeSimulateBtn.addEventListener('click', () => {
+        state.cbMode = 'simulate';
+        syncColorBlindUI();
+      });
+
+      cbSplitSwatchToggle.addEventListener('change', (e) => {
+        state.cbSplitSwatch = e.target.checked;
+        syncColorBlindUI();
+      });
+
+      // Render inicial completo
+      renderFilterPills();
+      renderCatalog();
+      renderReferencePanel();
+      renderEquivalents();
+    });
+  </script>
+</body>
+</html>

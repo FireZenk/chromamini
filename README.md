@@ -1,0 +1,1 @@
+Chrome Mini - Perceptual converter and comparator for acrylic paints used in scale modeling. Includes support for color blindness.
