@@ -242,7 +242,7 @@
               </svg>
             </div>
             <input id="searchInput" type="text" autocomplete="off"
-              placeholder="Ej: Rojo Bermellón, Mephiston Red, 70.909, 1763, Oro Glorioso, Hueso, Leadbelcher..."
+              placeholder="Ej: Rojo Bermellón, Mephiston Red, 70.909, WP3117, oro, hueso, Leadbelcher..."
               class="w-full pl-11 pr-11 py-3 rounded-xl bg-slate-50 dark:bg-studio-800 border border-slate-300 dark:border-studio-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm sm:text-base placeholder:text-slate-400 dark:placeholder:text-slate-500 transition" />
             <button id="clearSearchBtn" type="button" title="Limpiar búsqueda"
               class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
@@ -255,7 +255,7 @@
           <div id="quickSearchContainer" class="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
             <span id="quickTestsLabel" class="text-slate-400 dark:text-slate-500 mr-1">Pruebas rápidas:</span>
             <button type="button" id="quickVermilionBtn" data-quick="Rojo Bermellón" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition cursor-pointer">Rojo Bermellón</button>
-            <button type="button" data-quick="1763" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 font-mono transition cursor-pointer">1763 (GSW)</button>
+            <button type="button" data-quick="WP3117" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 font-mono transition cursor-pointer">WP3117 (Army Painter)</button>
             <button type="button" data-quick="Hueso" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition cursor-pointer">Hueso / Bone</button>
             <button type="button" data-quick="70.909" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 font-mono transition cursor-pointer">70.909</button>
             <button type="button" data-quick="Oro" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition cursor-pointer">Oro / Gold</button>
@@ -542,6 +542,9 @@
         <p id="footerDisclaimer" class="text-[11px] text-slate-500 dark:text-slate-400">
           ChromaMini · Los valores HEX son aproximaciones digitales calibradas; el acabado final puede variar según imprimación y barniz.
         </p>
+        <p class="text-[11px] text-slate-400 dark:text-slate-500">
+          <a id="footerDataCredit" href="THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener" class="hover:underline">Datos de pinturas: Paint Commons (CC0) y miniature-paints © Rick Fleuren (MIT).</a>
+        </p>
       </div>
 
       <a id="footerRepoAnchor" href="https://github.com/FireZenk/chromamini" target="_blank" rel="noopener noreferrer"
@@ -603,7 +606,36 @@
     // ==================== PERSISTENCIA DE PREFERENCIAS (localStorage) ====================
 
     const SETTINGS_KEY = 'chromamini.settings';
-    const DEFAULT_REFERENCE_ID = 'cit-mephiston';
+    const DEFAULT_REFERENCE_ID = 'cit-mephiston-red';
+
+    // Ids antiguos (antes de importar Paint Commons) -> ids actuales, para no perder colecciones guardadas
+    let PAINT_ALIASES = new Map();
+    function buildPaintAliases() {
+      PAINT_ALIASES = new Map();
+      PAINT_DATABASE.forEach(p => (p.aliases || []).forEach(a => PAINT_ALIASES.set(a, p.id)));
+    }
+    function resolvePaintId(id) {
+      if (!id) return '';
+      if (PAINT_DATABASE.some(p => p.id === id)) return id;
+      return PAINT_ALIASES.get(id) || '';
+    }
+    function findPaint(id) {
+      const real = resolvePaintId(id);
+      return real ? PAINT_DATABASE.find(p => p.id === real) : null;
+    }
+
+    // Nombre secundario: el del otro idioma, o la gama si ambos coinciden (pinturas sin traducción)
+    function secondaryLabel(p) {
+      const other = state.lang === 'en' ? p.name_es : p.name_en;
+      const primary = state.lang === 'en' ? p.name_en : p.name_es;
+      return other && other !== primary ? other : p.range;
+    }
+
+    function codeBadgeHtml(code, extra = '') {
+      return code
+        ? `<span class="font-mono text-[11px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-studio-800 text-slate-600 dark:text-slate-300 shrink-0 ${extra}">${code}</span>`
+        : '';
+    }
 
     function loadSettings() {
       try {
@@ -656,7 +688,7 @@
       const types = Array.isArray(saved.activeTypes) ? saved.activeTypes.filter(ty => ALL_TYPES.includes(ty)) : [];
       if (types.length) state.activeTypes = new Set(types);
 
-      state.referencePaint = PAINT_DATABASE.find(p => p.id === saved.referenceId)
+      state.referencePaint = findPaint(saved.referenceId)
         || PAINT_DATABASE.find(p => p.id === DEFAULT_REFERENCE_ID)
         || PAINT_DATABASE[0];
       ['catalogOwnedOnly', 'equivOwnedOnly', 'toolsOwnedOnly', 'rampHueShift'].forEach(k => {
@@ -665,7 +697,7 @@
       if (TOOL_TABS.includes(saved.toolTab)) state.toolTab = saved.toolTab;
       if (Array.isArray(saved.mixer) && saved.mixer.length === MIXER_SLOTS) {
         state.mixer = saved.mixer.map(m => ({
-          id: PAINT_DATABASE.some(p => p.id === m.id) ? m.id : '',
+          id: resolvePaintId(m.id),
           parts: Math.max(0, Math.min(20, parseInt(m.parts, 10) || 0))
         }));
       }
@@ -720,7 +752,7 @@
         cbSplitLabel: 'Ver Original + Asistido',
         refsWord: 'refs',
         searchLabel: 'Buscar pintura en Español, Inglés o Código de Referencia',
-        searchPlaceholder: 'Ej: Rojo Bermellón, Mephiston Red, 70.909, 1763, Oro Glorioso, Hueso, Leadbelcher...',
+        searchPlaceholder: 'Ej: Rojo Bermellón, Mephiston Red, 70.909, WP3117, oro, hueso, Leadbelcher...',
         quickTests: 'Pruebas rápidas:',
         customHexLabel: 'O busca por color visual / código HEX',
         compareBtn: 'Comparar',
@@ -730,6 +762,8 @@
         finishFilter: 'Acabado / Tipo',
         catalogTitle: 'Catálogo de Pinturas',
         catalogSubtitle: 'Pulsa cualquier bote para establecerlo como color de referencia y calcular sus equivalencias.',
+        showMore: (n) => `Mostrar más (${n} restantes)`,
+        dataCredit: 'Datos de pinturas: Paint Commons (CC0) y miniature-paints © Rick Fleuren (MIT).',
         resultSingular: 'resultado',
         resultPlural: 'resultados',
         emptyTitle: 'No se encontraron pinturas con esos criterios',
@@ -760,7 +794,7 @@
         androidStepTitle: 'Android (Chrome / Edge / Brave)',
         androidStepDesc: '1. Abre el menú <strong>⋮</strong> en la esquina superior derecha.<br/>2. Pulsa <strong>"Instalar aplicación"</strong> o <strong>"Añadir a pantalla de inicio"</strong>.',
         understoodBtn: 'Entendido',
-        footerDisclaimer: 'ChromaMini · Los valores HEX son aproximaciones digitales calibradas; el acabado final puede variar ligeramente según imprimación y barniz.',
+        footerDisclaimer: 'ChromaMini · Los HEX son aproximaciones muestreadas de cartas de color de cada marca; el bote real puede variar según imprimación, capas y barniz.',
         types: {
           'Base': 'Base / Estándar',
           'Metálico': 'Metálico',
@@ -830,7 +864,7 @@
         cbSplitLabel: 'Show Original + Assisted',
         refsWord: 'paints',
         searchLabel: 'Search paint in Spanish, English or Reference Code',
-        searchPlaceholder: 'e.g. Mephiston Red, Rojo Bermellón, 70.909, 1763, Bone, Leadbelcher...',
+        searchPlaceholder: 'e.g. Mephiston Red, Vermilion, 70.909, WP3117, gold, bone, Leadbelcher...',
         quickTests: 'Quick tests:',
         customHexLabel: 'Or search by visual color / HEX code',
         compareBtn: 'Compare',
@@ -840,6 +874,8 @@
         finishFilter: 'Finish / Type',
         catalogTitle: 'Paint Catalog',
         catalogSubtitle: 'Click any paint bottle to set it as your reference color and compute matches.',
+        showMore: (n) => `Show more (${n} left)`,
+        dataCredit: 'Paint data: Paint Commons (CC0) and miniature-paints © Rick Fleuren (MIT).',
         resultSingular: 'result',
         resultPlural: 'results',
         emptyTitle: 'No paints found matching those criteria',
@@ -870,7 +906,7 @@
         androidStepTitle: 'Android (Chrome / Edge / Brave)',
         androidStepDesc: '1. Open the <strong>⋮</strong> menu in the top-right corner.<br/>2. Tap <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.',
         understoodBtn: 'Got it',
-        footerDisclaimer: 'ChromaMini · HEX values are calibrated digital approximations; final finish may vary slightly depending on primer and varnish.',
+        footerDisclaimer: 'ChromaMini · HEX values are approximations sampled from each brand\'s colour charts; the real paint may vary with primer, layering and varnish.',
         types: {
           'Base': 'Base / Standard',
           'Metálico': 'Metallic',
@@ -1250,6 +1286,19 @@
       };
     }
 
+    // La mayoría de nombres comerciales solo existen en inglés: términos de color en español -> inglés
+    const SEARCH_SYNONYMS = {
+      rojo: ['red', 'crimson', 'scarlet'], roja: ['red'], azul: ['blue'], verde: ['green'],
+      amarillo: ['yellow'], naranja: ['orange'], negro: ['black'], blanco: ['white'],
+      gris: ['grey', 'gray'], marron: ['brown'], hueso: ['bone'], oro: ['gold'], dorado: ['gold'],
+      plata: ['silver'], plateado: ['silver'], bronce: ['bronze'], cobre: ['copper'], acero: ['steel'],
+      hierro: ['iron'], piel: ['skin', 'flesh'], carne: ['flesh'], purpura: ['purple'], morado: ['purple', 'violet'],
+      violeta: ['violet'], rosa: ['pink'], turquesa: ['turquoise'], cian: ['cyan'], arena: ['sand'],
+      tierra: ['earth'], oxido: ['rust'], cuero: ['leather'], madera: ['wood'], sangre: ['blood'],
+      tinta: ['wash', 'shade', 'ink'], lavado: ['wash', 'shade'], sombra: ['shade'], metalico: ['metal'],
+      oscuro: ['dark'], claro: ['light', 'pale'], crema: ['cream']
+    };
+
     function normalizeText(str) {
       return (str || '')
         .toString()
@@ -1366,6 +1415,7 @@
       document.getElementById('footerDisclaimer').textContent = s.footerDisclaimer;
       document.getElementById('footerAuthor').textContent = s.footerAuthor;
       document.getElementById('footerRepoLink').textContent = s.footerRepoLink;
+      document.getElementById('footerDataCredit').textContent = s.dataCredit;
 
       // Actualizar opciones del selector de daltonismo
       const cbSelect = document.getElementById('cbTypeSelect');
@@ -1425,6 +1475,9 @@
       }).join('');
     }
 
+    const CATALOG_PAGE_SIZE = 60;
+    const catalogPaging = { limit: CATALOG_PAGE_SIZE, signature: '' };
+
     function renderCatalog() {
       const grid = document.getElementById('paintCatalogGrid');
       const emptyState = document.getElementById('emptyCatalogState');
@@ -1445,10 +1498,20 @@
         const haystack = normalizeText(
           `${paint.name_es} ${paint.name_en} ${paint.code} ${paint.brand} ${paint.range} ${paint.hex}`
         );
-        return query.split(/\s+/).every(token => haystack.includes(token));
+        return query.split(/\s+/).every(token =>
+          haystack.includes(token) || (SEARCH_SYNONYMS[token] || []).some(syn => haystack.includes(syn)));
       });
 
       countLabel.textContent = `${filtered.length} ${filtered.length === 1 ? s.resultSingular : s.resultPlural}`;
+
+      // Paginación: con más de mil botes, pintar todo de golpe es lento. Se reinicia al cambiar filtros.
+      const signature = [query, [...state.activeBrands].join(','), [...state.activeTypes].join(','), state.catalogOwnedOnly].join('|');
+      if (signature !== catalogPaging.signature) {
+        catalogPaging.signature = signature;
+        catalogPaging.limit = CATALOG_PAGE_SIZE;
+      }
+      const visible = filtered.slice(0, catalogPaging.limit);
+      const remaining = filtered.length - visible.length;
 
       if (filtered.length === 0) {
         grid.classList.add('hidden');
@@ -1459,7 +1522,7 @@
       grid.classList.remove('hidden');
       emptyState.classList.add('hidden');
 
-      grid.innerHTML = filtered.map(paint => {
+      grid.innerHTML = visible.map(paint => {
         const isSelected = !state.isCustomColorMode && state.referencePaint && state.referencePaint.id === paint.id;
         const textureClass = getSwatchTextureClass(paint.type);
         const processedHex = getProcessedHex(paint.hex);
@@ -1467,7 +1530,7 @@
         const familyTag = getColorFamilyTag(paint.hex, paint.type);
 
         const primaryName = state.lang === 'en' ? paint.name_en : paint.name_es;
-        const secondaryName = state.lang === 'en' ? paint.name_es : paint.name_en;
+        const secondaryName = secondaryLabel(paint);
         const typeBadgeText = s.typeBadges[paint.type] || '';
 
         const swatchHtml = showSplit
@@ -1501,9 +1564,7 @@
                 <span class="text-[11px] font-semibold text-amber-600 dark:text-amber-400 truncate">
                   ${paint.brand}
                 </span>
-                <span class="font-mono text-[11px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-studio-800 text-slate-600 dark:text-slate-300 shrink-0">
-                  ${paint.code}
-                </span>
+                ${codeBadgeHtml(paint.code)}
               </div>
               <h4 class="font-bold text-sm text-slate-900 dark:text-slate-100 truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                 ${primaryName}
@@ -1515,7 +1576,11 @@
             ${ownToggleHtml(paint)}
           </div>
         `;
-      }).join('');
+      }).join('') + (remaining > 0 ? `
+        <button type="button" id="catalogShowMoreBtn"
+          class="sm:col-span-2 py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-studio-600 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:border-amber-500 hover:bg-amber-500/5 transition cursor-pointer">
+          ${s.showMore(remaining)}
+        </button>` : '');
     }
 
     // ==================== RENDERIZADO DE PANEL DE REFERENCIA Y EQUIVALENCIAS ====================
@@ -1584,8 +1649,8 @@
         brandBadge.textContent = `${p.brand} · ${p.range}`;
         hexText.textContent = p.hex.toUpperCase();
         namePrimary.textContent = state.lang === 'en' ? p.name_en : p.name_es;
-        nameSecondary.textContent = state.lang === 'en' ? p.name_es : p.name_en;
-        codeBadge.textContent = p.code;
+        nameSecondary.textContent = secondaryLabel(p);
+        codeBadge.textContent = p.code || p.range;
         typeLabel.textContent = s.types[p.type] || p.type;
       }
     }
@@ -1655,7 +1720,7 @@
         const confusionWarning = cbActive && match.deltaE > 5.0 && match.perceivedDeltaE < 2.0;
 
         const primaryName = state.lang === 'en' ? match.name_en : match.name_es;
-        const secondaryName = state.lang === 'en' ? match.name_es : match.name_en;
+        const secondaryName = secondaryLabel(match);
         const profileShort = COLORBLIND_PROFILES[state.cbType].name[state.lang].split(' ')[0];
 
         return `
@@ -1681,10 +1746,10 @@
                 <h4 class="font-bold text-sm text-slate-900 dark:text-white truncate">
                   ${primaryName}
                 </h4>
-                <button type="button" data-copy="${match.code}"
+                ${match.code ? `<button type="button" data-copy="${match.code}"
                   class="copy-code-btn font-mono text-[11px] font-semibold px-1.5 py-0.5 rounded bg-white dark:bg-studio-900 border border-slate-200 dark:border-studio-700 hover:border-amber-500 text-slate-700 dark:text-slate-300 shrink-0 transition cursor-pointer">
                   ${match.code}
-                </button>
+                </button>` : ''}
               </div>
 
               <div class="flex items-center justify-between gap-2 mt-0.5">
@@ -1882,9 +1947,9 @@
     const collection = { owned: new Set(), wishlist: new Set() };
 
     function sanitizeCollection(data) {
-      const ids = new Set(PAINT_DATABASE.map(p => p.id));
-      const owned = new Set((Array.isArray(data.owned) ? data.owned : []).filter(id => ids.has(id)));
-      const wishlist = new Set((Array.isArray(data.wishlist) ? data.wishlist : []).filter(id => ids.has(id) && !owned.has(id)));
+      const resolveAll = (list) => (Array.isArray(list) ? list : []).map(resolvePaintId).filter(Boolean);
+      const owned = new Set(resolveAll(data.owned));
+      const wishlist = new Set(resolveAll(data.wishlist).filter(id => !owned.has(id)));
       return { owned, wishlist };
     }
 
@@ -2097,7 +2162,7 @@
             </div>
             <p class="font-bold text-sm truncate">${paintName(p)}</p>
             <div class="flex items-center justify-between gap-2">
-              <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${p.brand} · <span class="font-mono">${p.code}</span></p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${p.brand} · ${p.code ? `<span class="font-mono">${p.code}</span>` : p.range}</p>
               <div class="flex items-center gap-1.5 shrink-0">
                 ${collectionControlsHtml(p)}
                 <button type="button" data-use-id="${p.id}" title="${T.useTitle}" class="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer">${T.use} →</button>
@@ -2205,7 +2270,7 @@
       if (Array.isArray(state.mixer) && state.mixer.length === MIXER_SLOTS) return;
       state.mixer = [
         { id: ref.paint ? ref.paint.id : DEFAULT_REFERENCE_ID, parts: 2 },
-        { id: 'cit-corax', parts: 1 },
+        { id: 'cit-corax-white', parts: 1 },
         { id: '', parts: 0 }
       ];
     }
@@ -2223,7 +2288,7 @@
       const optionsFor = (selectedId) => `<option value="">${T.none}</option>` + ALL_BRANDS.map(brand => `
         <optgroup label="${brand}">
           ${PAINT_DATABASE.filter(p => p.brand === brand)
-            .map(p => `<option value="${p.id}" ${p.id === selectedId ? 'selected' : ''}>${paintName(p)} · ${p.code}</option>`).join('')}
+            .map(p => `<option value="${p.id}" ${p.id === selectedId ? 'selected' : ''}>${paintName(p)}${p.code ? ` · ${p.code}` : ` · ${p.range}`}</option>`).join('')}
         </optgroup>`).join('');
       const field = 'rounded-lg bg-slate-50 dark:bg-studio-800 border border-slate-300 dark:border-studio-600 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500';
       return `
@@ -2462,6 +2527,7 @@
 
       try {
         PAINT_DATABASE = await loadPaintDatabase();
+        buildPaintAliases();
       } catch (err) {
         console.error('[ChromaMini] paints.json', err);
         const grid = document.getElementById('paintCatalogGrid');
@@ -2605,9 +2671,14 @@
       // 3. Catálogo de Pinturas
       document.getElementById('paintCatalogGrid').addEventListener('click', (e) => {
         if (e.target.closest('[data-col-action]')) return;
+        if (e.target.closest('#catalogShowMoreBtn')) {
+          catalogPaging.limit += CATALOG_PAGE_SIZE * 2;
+          renderCatalog();
+          return;
+        }
         const card = e.target.closest('.paint-card');
         if (!card) return;
-        const found = PAINT_DATABASE.find(p => p.id === card.getAttribute('data-paint-id'));
+        const found = findPaint(card.getAttribute('data-paint-id'));
         if (found) setReference(found);
       });
 
@@ -2816,7 +2887,7 @@
             showToast(T.listEmpty);
             return;
           }
-          const text = `ChromaMini · ${tt().collection.wishTitle}\n` + items.map(p => `- ${p.brand} · ${p.code} · ${paintName(p)}`).join('\n');
+          const text = `ChromaMini · ${tt().collection.wishTitle}\n` + items.map(p => `- ${p.brand} · ${p.code || p.range} · ${paintName(p)}`).join('\n');
           await copyTextToClipboard(text, T.listCopied);
         } else if (kind === 'export') {
           await copyTextToClipboard(JSON.stringify({ app: 'chromamini', owned: [...collection.owned], wishlist: [...collection.wishlist] }), T.exported);

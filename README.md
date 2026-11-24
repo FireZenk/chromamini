@@ -21,12 +21,27 @@ Live: https://firezenk.github.io/chromamini/
 | File | Purpose |
 |------|---------|
 | `index.html` | The whole app (UI, color math, i18n). |
-| `paints.json` | Paint database: `{ id, brand, range, name_es, name_en, code, type, hex }`. |
+| `paints.json` | Paint database (generated): `{ id, brand, range, name_es, name_en, code, type, hex, source, aliases? }`. |
+| `scripts/import-paintcommons.mjs` | Regenerates `paints.json` from the Paint Commons catalog. |
+| `THIRD_PARTY_NOTICES.md` | Data credits and licences. |
 | `manifest.webmanifest`, `sw.js`, `icons/` | PWA manifest, offline cache, app icons. |
 
-## Contributing paints
+## Paint data
 
-Add an entry to `paints.json`. `type` must be one of `Base`, `Metálico`, `Wash / Tinta`, `Contrast / Xpress`, and `brand` must be listed in `ALL_BRANDS` inside `index.html`.
+`paints.json` holds ~1,300 current paints from Citadel, Vallejo (Model/Game/Xpress), Green Stuff World,
+AK 3rd Gen and The Army Painter, imported from [Paint Commons](https://github.com/paintcommons/catalog)
+(CC0, with MIT-licensed records credited in `THIRD_PARTY_NOTICES.md`). Colours are approximate samples of
+manufacturer charts, not lab measurements.
+
+To refresh it:
+
+```bash
+git clone https://github.com/paintcommons/catalog /tmp/paintcommons
+node scripts/import-paintcommons.mjs /tmp/paintcommons
+```
+
+The script keeps existing Spanish names and stores old ids as `aliases`, so saved collections keep working.
+Colour corrections are best sent upstream to Paint Commons so every project benefits.
 
 ## Local development
 
