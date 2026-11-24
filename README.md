@@ -10,6 +10,11 @@ Live: https://firezenk.github.io/chromamini/
 - Closest-match search using **CIEDE2000** (ΔE00) over CIELAB.
 - Color blindness simulation and LMS daltonization (protan, deutan, tritan, achromat).
 - Installable PWA with offline support (service worker).
+- Painter's toolkit, driven by the current reference color:
+  - **Highlights & shadows**: 5-step ramp (optional cool shadows / warm highlights) plus a suggested wash.
+  - **My collection**: mark owned paints, keep a shopping list, export/import, filter catalog and matches.
+  - **Mixer**: up to 3 paints by parts, estimated result and closest commercial paints.
+  - **Color schemes**: complementary, split, triadic, analogous and tetradic, with a color blind check.
 
 ## Project layout
 

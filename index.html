@@ -300,6 +300,10 @@
         <div class="space-y-1.5">
           <span id="finishFilterLabel" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Acabado / Tipo</span>
           <div id="typeFiltersContainer" class="flex flex-wrap gap-1.5"></div>
+          <label class="inline-flex items-center gap-2 pt-1 cursor-pointer select-none text-xs font-medium text-slate-700 dark:text-slate-300">
+            <input id="catalogOwnedOnlyToggle" type="checkbox" class="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 border-slate-300 dark:border-studio-600 bg-slate-100 dark:bg-studio-800" />
+            <span id="catalogOwnedOnlyLabel">Solo mi colección</span>
+          </label>
         </div>
       </div>
     </section>
@@ -408,6 +412,11 @@
                 <input id="excludeSameBrandToggle" type="checkbox" class="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 border-slate-300 dark:border-studio-600 bg-slate-100 dark:bg-studio-800" />
                 <span id="otherBrandsLabel">Otras marcas</span>
               </label>
+
+              <label class="inline-flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-slate-700 dark:text-slate-300">
+                <input id="equivOwnedOnlyToggle" type="checkbox" class="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 border-slate-300 dark:border-studio-600 bg-slate-100 dark:bg-studio-800" />
+                <span id="equivOwnedOnlyLabel">Solo mi colección</span>
+              </label>
             </div>
           </div>
         </div>
@@ -430,6 +439,22 @@
         </div>
       </aside>
     </div>
+
+    <!-- Herramientas del pintor: rampa de luces/sombras, colección, mezclador y esquemas -->
+    <section id="toolsSection" class="bg-white dark:bg-studio-900 rounded-2xl border border-slate-200 dark:border-studio-700/80 shadow-sm overflow-hidden">
+      <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-studio-700/80 flex flex-wrap items-center justify-between gap-3">
+        <div class="min-w-0">
+          <h2 id="toolsTitle" class="text-base sm:text-lg font-bold tracking-tight">Herramientas del pintor</h2>
+          <p id="toolsSubtitle" class="text-xs text-slate-500 dark:text-slate-400 truncate"></p>
+        </div>
+        <label class="inline-flex items-center gap-2 cursor-pointer select-none text-xs font-medium text-slate-700 dark:text-slate-300">
+          <input id="toolsOwnedOnlyToggle" type="checkbox" class="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 border-slate-300 dark:border-studio-600 bg-slate-100 dark:bg-studio-800" />
+          <span id="toolsOwnedOnlyLabel">Solo con mi colección</span>
+        </label>
+      </div>
+      <div id="toolTabs" role="tablist" class="flex gap-1.5 px-4 sm:px-5 pt-4 overflow-x-auto"></div>
+      <div id="toolPanel" role="tabpanel" class="p-4 sm:p-5"></div>
+    </section>
   </main>
 
   <!-- Modal / Guía de Instalación como Web-App en Móvil y Escritorio -->
@@ -566,7 +591,13 @@
       cbType: 'deuteranomaly',
       cbMode: 'correct',
       cbSplitSwatch: true,
-      deferredInstallPrompt: null
+      deferredInstallPrompt: null,
+      catalogOwnedOnly: false,
+      equivOwnedOnly: false,
+      toolsOwnedOnly: false,
+      toolTab: 'ramp',
+      rampHueShift: true,
+      mixer: null
     };
 
     // ==================== PERSISTENCIA DE PREFERENCIAS (localStorage) ====================
@@ -597,7 +628,13 @@
           activeTypes: [...state.activeTypes],
           referenceId: state.referencePaint ? state.referencePaint.id : null,
           isCustomColorMode: state.isCustomColorMode,
-          customHex: state.customHex
+          customHex: state.customHex,
+          catalogOwnedOnly: state.catalogOwnedOnly,
+          equivOwnedOnly: state.equivOwnedOnly,
+          toolsOwnedOnly: state.toolsOwnedOnly,
+          toolTab: state.toolTab,
+          rampHueShift: state.rampHueShift,
+          mixer: state.mixer
         }));
       } catch (e) {
         // Modo privado o almacenamiento bloqueado: la app sigue funcionando sin persistir
@@ -622,6 +659,16 @@
       state.referencePaint = PAINT_DATABASE.find(p => p.id === saved.referenceId)
         || PAINT_DATABASE.find(p => p.id === DEFAULT_REFERENCE_ID)
         || PAINT_DATABASE[0];
+      ['catalogOwnedOnly', 'equivOwnedOnly', 'toolsOwnedOnly', 'rampHueShift'].forEach(k => {
+        if (typeof saved[k] === 'boolean') state[k] = saved[k];
+      });
+      if (TOOL_TABS.includes(saved.toolTab)) state.toolTab = saved.toolTab;
+      if (Array.isArray(saved.mixer) && saved.mixer.length === MIXER_SLOTS) {
+        state.mixer = saved.mixer.map(m => ({
+          id: PAINT_DATABASE.some(p => p.id === m.id) ? m.id : '',
+          parts: Math.max(0, Math.min(20, parseInt(m.parts, 10) || 0))
+        }));
+      }
       if (typeof saved.customHex === 'string' && /^#[0-9A-F]{6}$/i.test(saved.customHex)) {
         state.customHex = saved.customHex.toUpperCase();
         state.isCustomColorMode = saved.isCustomColorMode === true;
@@ -1236,7 +1283,7 @@
       return ok;
     }
 
-    async function copyTextToClipboard(text) {
+    async function copyTextToClipboard(text, successMessage) {
       let ok = false;
       if (navigator.clipboard && window.isSecureContext) {
         try {
@@ -1248,7 +1295,7 @@
       } else {
         ok = legacyCopy(text);
       }
-      showToast(ok ? t().toasts.copied(text) : t().toasts.copyError);
+      showToast(ok ? (successMessage || t().toasts.copied(text)) : t().toasts.copyError);
     }
 
     // ==================== TRADUCCIÓN DINÁMICA DE TODA LA INTERFAZ ====================
@@ -1304,6 +1351,8 @@
       document.getElementById('refOverlineLabel').textContent = s.refOverline;
       document.getElementById('sameFinishLabel').textContent = s.sameFinish;
       document.getElementById('otherBrandsLabel').textContent = s.otherBrands;
+      document.getElementById('catalogOwnedOnlyLabel').textContent = tt().ownedOnlyShort;
+      document.getElementById('equivOwnedOnlyLabel').textContent = tt().ownedOnlyShort;
       document.getElementById('equivalentsTitle').textContent = s.equivalentsTitle;
 
       document.getElementById('installModalTitle').textContent = s.installModalTitle;
@@ -1390,6 +1439,7 @@
       const filtered = PAINT_DATABASE.filter(paint => {
         if (!state.activeBrands.has(paint.brand)) return false;
         if (!state.activeTypes.has(paint.type)) return false;
+        if (state.catalogOwnedOnly && !collection.owned.has(paint.id)) return false;
 
         if (!query) return true;
         const haystack = normalizeText(
@@ -1462,6 +1512,7 @@
                 ${secondaryName}
               </p>
             </div>
+            ${ownToggleHtml(paint)}
           </div>
         `;
       }).join('');
@@ -1539,7 +1590,13 @@
       }
     }
 
+    // Todo lo que depende de la referencia actual: equivalencias + herramientas del pintor
     function renderEquivalents() {
+      renderEquivalentsList();
+      renderTools();
+    }
+
+    function renderEquivalentsList() {
       const listContainer = document.getElementById('equivalentsList');
       const subtitle = document.getElementById('equivalentsSubtitle');
       const s = t();
@@ -1561,6 +1618,7 @@
           if (refId && p.id === refId) return false;
           if (state.excludeSameBrand && refBrand && p.brand === refBrand) return false;
           if (state.sameFinishOnly && refType && p.type !== refType) return false;
+          if (state.equivOwnedOnly && !collection.owned.has(p.id)) return false;
           return true;
         })
         .map(p => {
@@ -1633,10 +1691,13 @@
                 <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
                   ${secondaryName}
                 </p>
-                <button type="button" data-select-id="${match.id}"
-                  class="select-match-btn text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline shrink-0 cursor-pointer">
-                  ${s.useBtn}
-                </button>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  ${collectionControlsHtml(match)}
+                  <button type="button" data-select-id="${match.id}"
+                    class="select-match-btn text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline shrink-0 cursor-pointer">
+                    ${s.useBtn}
+                  </button>
+                </div>
               </div>
 
               ${cbActive ? `
@@ -1651,6 +1712,656 @@
           </div>
         `;
       }).join('');
+    }
+
+    // ==================== HERRAMIENTAS DEL PINTOR: TEXTOS (ES / EN) ====================
+
+    const TOOL_TABS = ['ramp', 'collection', 'mixer', 'schemes'];
+    const MIXER_SLOTS = 3;
+
+    const TOOL_STRINGS = {
+      es: {
+        title: 'Herramientas del pintor',
+        subtitle: (name) => `Calculadas a partir de la referencia: ${name}`,
+        ownedOnly: 'Solo con mi colección',
+        ownedOnlyShort: 'Solo mi colección',
+        tabs: { ramp: 'Luces y sombras', collection: 'Mi colección', mixer: 'Mezclador', schemes: 'Esquemas de color' },
+        target: 'Objetivo',
+        owned: 'En mi colección',
+        ownedShort: 'La tengo',
+        ownAdd: 'Añadir a mi colección',
+        ownRemove: 'Quitar de mi colección',
+        wishAdd: 'Añadir a la lista de la compra',
+        wishRemove: 'Quitar de la lista de la compra',
+        use: 'Usar',
+        useTitle: 'Usar como pintura de referencia',
+        noMatch: 'Ninguna pintura de tu colección encaja aquí. Desactiva "Solo con mi colección" o añade pinturas.',
+        emptyCollection: 'Aún no has marcado pinturas: pulsa ✓ en las tarjetas del catálogo para añadirlas.',
+        ramp: {
+          intro: 'Rampa de 5 pasos, de la sombra profunda a la luz extrema, emparejada con botes reales.',
+          hueShift: 'Sombras frías y luces cálidas (desplazamiento de tono)',
+          steps: { deepShadow: 'Sombra profunda', shadow: 'Sombra', base: 'Base', highlight: 'Luz', extreme: 'Luz extrema' },
+          wash: 'Tinta sugerida para los huecos',
+          metallic: 'Referencia metálica: la rampa se construye con pinturas metálicas.'
+        },
+        collection: {
+          intro: 'Marca con ✓ los botes que tienes. Se guarda solo en este navegador.',
+          ownedCount: (n, total) => `${n} de ${total} pinturas en tu colección`,
+          wishCount: (n) => `${n} en la lista de la compra`,
+          ownedTitle: 'Mis pinturas',
+          wishTitle: 'Lista de la compra',
+          wishEmpty: 'Vacía. Añade botes con el carrito desde las equivalencias o las herramientas.',
+          copyList: 'Copiar lista de la compra',
+          exportBtn: 'Exportar colección',
+          importBtn: 'Importar colección',
+          importPrompt: 'Pega aquí el texto exportado de tu colección:',
+          markOwned: 'Ya la tengo',
+          remove: 'Quitar'
+        },
+        mixer: {
+          intro: 'Combina hasta 3 pinturas por partes: verás el color estimado y los botes comerciales más parecidos.',
+          paint: (i) => `Pintura ${i}`,
+          none: '— Ninguna —',
+          parts: 'Partes',
+          result: 'Resultado estimado',
+          closest: 'Botes más parecidos a la mezcla',
+          useResult: 'Usar mezcla como referencia',
+          disclaimer: 'Estimación digital: la mezcla real depende de pigmentos, opacidad y medio.',
+          needPaint: 'Elige al menos una pintura con más de 0 partes.'
+        },
+        schemes: {
+          intro: 'Armonías de color a partir del tono de referencia, convertidas en botes reales.',
+          types: {
+            complementary: 'Complementario',
+            split: 'Complementario dividido',
+            triadic: 'Triádico',
+            analogous: 'Análogo',
+            tetradic: 'Tetrádico'
+          },
+          lowChroma: 'La referencia es casi neutra (gris, blanco o negro): las armonías de tono no son fiables. Prueba con un color más saturado.',
+          cbOk: (p) => `Comprobado con ${p}: todos los colores se distinguen.`,
+          cbWarn: (p) => `Con ${p} se confunden:`,
+          cbHint: 'Activa el modo daltonismo para comprobar si los colores del esquema se distinguen.'
+        },
+        toasts: {
+          ownedAdded: (n) => `${n} añadida a tu colección`,
+          ownedRemoved: (n) => `${n} quitada de tu colección`,
+          wishAdded: (n) => `${n} añadida a la lista de la compra`,
+          wishRemoved: (n) => `${n} quitada de la lista de la compra`,
+          listCopied: 'Lista de la compra copiada',
+          listEmpty: 'La lista de la compra está vacía',
+          exported: 'Colección copiada al portapapeles',
+          imported: (n) => `Colección importada: ${n} pinturas`,
+          importError: 'El texto pegado no es una colección válida'
+        }
+      },
+      en: {
+        title: "Painter's toolkit",
+        subtitle: (name) => `Computed from the current reference: ${name}`,
+        ownedOnly: 'Only with my collection',
+        ownedOnlyShort: 'My collection only',
+        tabs: { ramp: 'Highlights & shadows', collection: 'My collection', mixer: 'Mixer', schemes: 'Color schemes' },
+        target: 'Target',
+        owned: 'In my collection',
+        ownedShort: 'Owned',
+        ownAdd: 'Add to my collection',
+        ownRemove: 'Remove from my collection',
+        wishAdd: 'Add to shopping list',
+        wishRemove: 'Remove from shopping list',
+        use: 'Use',
+        useTitle: 'Use as reference paint',
+        noMatch: 'None of your paints fits here. Uncheck "Only with my collection" or add paints.',
+        emptyCollection: "You haven't marked any paints yet: tap ✓ on catalog cards to add them.",
+        ramp: {
+          intro: '5-step ramp from deep shadow to extreme highlight, matched to real paints.',
+          hueShift: 'Cool shadows and warm highlights (hue shifting)',
+          steps: { deepShadow: 'Deep shadow', shadow: 'Shadow', base: 'Base', highlight: 'Highlight', extreme: 'Extreme highlight' },
+          wash: 'Suggested wash for recesses',
+          metallic: 'Metallic reference: the ramp is built from metallic paints.'
+        },
+        collection: {
+          intro: 'Tick ✓ the paints you own. Stored in this browser only.',
+          ownedCount: (n, total) => `${n} of ${total} paints in your collection`,
+          wishCount: (n) => `${n} on your shopping list`,
+          ownedTitle: 'My paints',
+          wishTitle: 'Shopping list',
+          wishEmpty: 'Empty. Add paints with the cart button from equivalents or tools.',
+          copyList: 'Copy shopping list',
+          exportBtn: 'Export collection',
+          importBtn: 'Import collection',
+          importPrompt: 'Paste your exported collection text here:',
+          markOwned: 'I own it',
+          remove: 'Remove'
+        },
+        mixer: {
+          intro: 'Combine up to 3 paints by parts to see the estimated color and the closest commercial paints.',
+          paint: (i) => `Paint ${i}`,
+          none: '— None —',
+          parts: 'Parts',
+          result: 'Estimated result',
+          closest: 'Closest paints to the mix',
+          useResult: 'Use mix as reference',
+          disclaimer: 'Digital estimate: real mixes depend on pigments, opacity and medium.',
+          needPaint: 'Pick at least one paint with more than 0 parts.'
+        },
+        schemes: {
+          intro: 'Color harmonies built from the reference hue, turned into real paints.',
+          types: {
+            complementary: 'Complementary',
+            split: 'Split complementary',
+            triadic: 'Triadic',
+            analogous: 'Analogous',
+            tetradic: 'Tetradic'
+          },
+          lowChroma: 'The reference is almost neutral (grey, white or black): hue harmonies are not reliable. Try a more saturated color.',
+          cbOk: (p) => `Checked for ${p}: all colors are distinguishable.`,
+          cbWarn: (p) => `With ${p} these look alike:`,
+          cbHint: 'Turn on color blind mode to check whether the scheme colors can be told apart.'
+        },
+        toasts: {
+          ownedAdded: (n) => `${n} added to your collection`,
+          ownedRemoved: (n) => `${n} removed from your collection`,
+          wishAdded: (n) => `${n} added to shopping list`,
+          wishRemoved: (n) => `${n} removed from shopping list`,
+          listCopied: 'Shopping list copied',
+          listEmpty: 'Your shopping list is empty',
+          exported: 'Collection copied to clipboard',
+          imported: (n) => `Collection imported: ${n} paints`,
+          importError: 'The pasted text is not a valid collection'
+        }
+      }
+    };
+
+    function tt() {
+      return TOOL_STRINGS[state.lang];
+    }
+
+    // ==================== MI COLECCIÓN (localStorage) ====================
+
+    const COLLECTION_KEY = 'chromamini.collection';
+    const collection = { owned: new Set(), wishlist: new Set() };
+
+    function sanitizeCollection(data) {
+      const ids = new Set(PAINT_DATABASE.map(p => p.id));
+      const owned = new Set((Array.isArray(data.owned) ? data.owned : []).filter(id => ids.has(id)));
+      const wishlist = new Set((Array.isArray(data.wishlist) ? data.wishlist : []).filter(id => ids.has(id) && !owned.has(id)));
+      return { owned, wishlist };
+    }
+
+    function loadCollection() {
+      try {
+        const data = JSON.parse(localStorage.getItem(COLLECTION_KEY) || '{}') || {};
+        const { owned, wishlist } = sanitizeCollection(data);
+        collection.owned = owned;
+        collection.wishlist = wishlist;
+      } catch (e) { /* sin almacenamiento: colección vacía */ }
+    }
+
+    function saveCollection() {
+      try {
+        localStorage.setItem(COLLECTION_KEY, JSON.stringify({
+          owned: [...collection.owned],
+          wishlist: [...collection.wishlist]
+        }));
+      } catch (e) { /* modo privado */ }
+    }
+
+    function paintName(p) {
+      return state.lang === 'en' ? p.name_en : p.name_es;
+    }
+
+    const CHECK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    const CART_SVG = '<svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>';
+
+    // Botón ✓ de las tarjetas del catálogo
+    function ownToggleHtml(paint) {
+      const owned = collection.owned.has(paint.id);
+      const T = tt();
+      return `
+        <button type="button" data-col-action="own" data-id="${paint.id}" aria-pressed="${owned}" title="${owned ? T.ownRemove : T.ownAdd}" aria-label="${owned ? T.ownRemove : T.ownAdd}"
+          class="shrink-0 w-7 h-7 rounded-lg border flex items-center justify-center transition cursor-pointer ${
+            owned
+              ? 'bg-emerald-500 border-emerald-500 text-white'
+              : 'border-slate-300 dark:border-studio-600 text-slate-300 dark:text-studio-600 hover:border-emerald-500 hover:text-emerald-500'
+          }">${CHECK_SVG}</button>`;
+    }
+
+    // Insignia "La tengo" o botón de carrito para la lista de la compra
+    function collectionControlsHtml(paint) {
+      const T = tt();
+      if (collection.owned.has(paint.id)) {
+        return `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30" title="${T.owned}">${CHECK_SVG}${T.ownedShort}</span>`;
+      }
+      const inWish = collection.wishlist.has(paint.id);
+      return `
+        <button type="button" data-col-action="wish" data-id="${paint.id}" aria-pressed="${inWish}" title="${inWish ? T.wishRemove : T.wishAdd}" aria-label="${inWish ? T.wishRemove : T.wishAdd}"
+          class="inline-flex items-center justify-center w-6 h-6 rounded border transition cursor-pointer ${
+            inWish
+              ? 'bg-sky-500 border-sky-500 text-white'
+              : 'border-slate-300 dark:border-studio-600 text-slate-400 hover:border-sky-500 hover:text-sky-500'
+          }">${CART_SVG}</button>`;
+    }
+
+    // ==================== HERRAMIENTAS DEL PINTOR: MATEMÁTICA DE COLOR ====================
+
+    const SHADOW_HUE = 285;    // azul-violeta: sombras frías
+    const HIGHLIGHT_HUE = 85;  // amarillo: luces cálidas
+
+    function labToLinearRgb({ L, a, b }) {
+      const fy = (L + 16) / 116;
+      const fx = fy + a / 500;
+      const fz = fy - b / 200;
+      const inv = (t) => {
+        const t3 = t * t * t;
+        return t3 > 0.008856 ? t3 : (t - 16 / 116) / 7.787;
+      };
+      const x = inv(fx) * 0.95047;
+      const y = inv(fy);
+      const z = inv(fz) * 1.08883;
+      return [
+        3.2404542 * x - 1.5371385 * y - 0.4985314 * z,
+        -0.9692660 * x + 1.8760108 * y + 0.0415560 * z,
+        0.0556434 * x - 0.2040259 * y + 1.0572252 * z
+      ];
+    }
+
+    // Lab -> HEX reduciendo croma hasta entrar en gama sRGB (evita tonos falseados al recortar)
+    function labToHex({ L, a, b }) {
+      let ca = a, cb = b;
+      let lin = labToLinearRgb({ L, a: ca, b: cb });
+      for (let i = 0; i < 40 && !lin.every(v => v >= -0.0005 && v <= 1.0005); i++) {
+        ca *= 0.94;
+        cb *= 0.94;
+        lin = labToLinearRgb({ L, a: ca, b: cb });
+      }
+      return rgbToHex({ r: linearToSrgb(lin[0]), g: linearToSrgb(lin[1]), b: linearToSrgb(lin[2]) });
+    }
+
+    function labToLch({ L, a, b }) {
+      return { L, C: Math.hypot(a, b), h: (Math.atan2(b, a) * 180 / Math.PI + 360) % 360 };
+    }
+
+    function lchToHex({ L, C, h }) {
+      const r = h * Math.PI / 180;
+      return labToHex({ L: Math.max(0, Math.min(100, L)), a: C * Math.cos(r), b: C * Math.sin(r) });
+    }
+
+    function shiftHueToward(h, target, amount) {
+      const diff = ((target - h + 540) % 360) - 180;
+      return (h + Math.sign(diff) * Math.min(Math.abs(diff), amount) + 360) % 360;
+    }
+
+    function getReference() {
+      return state.isCustomColorMode
+        ? { hex: state.customHex, type: 'Base', paint: null }
+        : { hex: state.referencePaint.hex, type: state.referencePaint.type, paint: state.referencePaint };
+    }
+
+    function findClosestPaints(hex, { types = null, ownedOnly = false, exclude = [], n = 1 } = {}) {
+      const lab = hexToLab(hex);
+      return PAINT_DATABASE
+        .filter(p => (!types || types.includes(p.type))
+          && (!ownedOnly || collection.owned.has(p.id))
+          && !exclude.includes(p.id))
+        .map(p => ({ paint: p, deltaE: deltaE2000(lab, hexToLab(p.hex)) }))
+        .sort((a, b) => a.deltaE - b.deltaE)
+        .slice(0, n);
+    }
+
+    // Mezcla aproximada: media entre aditiva y sustractiva (geométrica) en RGB lineal
+    function mixColors(items) {
+      const valid = items.filter(it => it.hex && it.parts > 0);
+      const total = valid.reduce((sum, it) => sum + it.parts, 0);
+      if (!total) return null;
+      const channels = [0, 1, 2].map(ch => {
+        let arith = 0, logSum = 0;
+        valid.forEach(it => {
+          const rgb = hexToRgb(it.hex);
+          const v = srgbToLinear([rgb.r, rgb.g, rgb.b][ch]);
+          const w = it.parts / total;
+          arith += w * v;
+          logSum += w * Math.log(Math.max(v, 0.001));
+        });
+        return 0.5 * arith + 0.5 * Math.exp(logSum);
+      });
+      return rgbToHex({ r: linearToSrgb(channels[0]), g: linearToSrgb(channels[1]), b: linearToSrgb(channels[2]) });
+    }
+
+    const RAMP_STEPS = [
+      { key: 'deepShadow', dL: -24, hue: SHADOW_HUE, shift: 18, cMul: 0.85 },
+      { key: 'shadow', dL: -12, hue: SHADOW_HUE, shift: 9, cMul: 1.0 },
+      { key: 'base', dL: 0 },
+      { key: 'highlight', dL: 12, hue: HIGHLIGHT_HUE, shift: 8, cMul: 0.92 },
+      { key: 'extreme', dL: 24, hue: HIGHLIGHT_HUE, shift: 16, cMul: 0.6 }
+    ];
+
+    function buildRamp(ref) {
+      const lch = labToLch(hexToLab(ref.hex));
+      const types = ref.type === 'Metálico' ? ['Metálico'] : ['Base'];
+      const ownedOnly = state.toolsOwnedOnly;
+      return RAMP_STEPS.map(step => {
+        if (step.key === 'base') {
+          const keepRef = ref.paint && types.includes(ref.paint.type) && (!ownedOnly || collection.owned.has(ref.paint.id));
+          return {
+            key: step.key,
+            target: ref.hex,
+            match: keepRef ? { paint: ref.paint, deltaE: 0 } : (findClosestPaints(ref.hex, { types, ownedOnly })[0] || null)
+          };
+        }
+        let h = lch.h;
+        if (state.rampHueShift && lch.C > 4) h = shiftHueToward(h, step.hue, step.shift);
+        const target = lchToHex({ L: Math.max(4, Math.min(97, lch.L + step.dL)), C: lch.C * step.cMul, h });
+        return { key: step.key, target, match: findClosestPaints(target, { types, ownedOnly })[0] || null };
+      });
+    }
+
+    const HARMONIES = {
+      complementary: [180],
+      split: [150, 210],
+      triadic: [120, 240],
+      analogous: [-30, 30],
+      tetradic: [90, 180, 270]
+    };
+
+    // ==================== HERRAMIENTAS DEL PINTOR: RENDERIZADO ====================
+
+    function deltaChipHtml(deltaE) {
+      const badge = getMatchBadge(deltaE);
+      return `<span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold border inline-flex items-center gap-1 ${badge.classes}">${badge.symbol} ΔE ${deltaE.toFixed(1)}</span>`;
+    }
+
+    function toolMatchRowHtml(label, targetHex, match) {
+      const T = tt();
+      const targetSwatch = `<div class="w-1/2 h-full" style="background-color: ${getProcessedHex(targetHex)};" title="${T.target}: ${targetHex}"></div>`;
+      if (!match) {
+        return `
+          <div class="rounded-xl p-3 bg-slate-50 dark:bg-studio-800/80 border border-dashed border-slate-300 dark:border-studio-600 flex items-center gap-3">
+            <div class="w-14 h-12 rounded-lg overflow-hidden shrink-0 flex border border-black/20 dark:border-white/15">${targetSwatch}<div class="w-1/2 h-full bg-slate-200 dark:bg-studio-700"></div></div>
+            <div class="min-w-0 flex-1">
+              <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">${label}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">${T.noMatch}</p>
+            </div>
+          </div>`;
+      }
+      const p = match.paint;
+      return `
+        <div class="rounded-xl p-3 bg-slate-50 dark:bg-studio-800/80 border border-slate-200/80 dark:border-studio-700/80 flex items-center gap-3">
+          <div class="w-14 h-12 rounded-lg overflow-hidden shrink-0 flex border border-black/20 dark:border-white/15 shadow-inner">
+            ${targetSwatch}
+            <div class="w-1/2 h-full border-l border-white/25 ${getSwatchTextureClass(p.type)}" style="background-color: ${getProcessedHex(p.hex)};" title="${p.hex}"></div>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 truncate">${label}</p>
+              ${deltaChipHtml(match.deltaE)}
+            </div>
+            <p class="font-bold text-sm truncate">${paintName(p)}</p>
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${p.brand} · <span class="font-mono">${p.code}</span></p>
+              <div class="flex items-center gap-1.5 shrink-0">
+                ${collectionControlsHtml(p)}
+                <button type="button" data-use-id="${p.id}" title="${T.useTitle}" class="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer">${T.use} →</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function introHtml(text) {
+      return `<p class="text-xs text-slate-500 dark:text-slate-400 mb-4">${text}</p>`;
+    }
+
+    function noteHtml(text, tone = 'amber') {
+      const tones = {
+        amber: 'bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200',
+        sky: 'bg-sky-500/10 border-sky-500/30 text-sky-800 dark:text-sky-200',
+        emerald: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-200'
+      };
+      return `<div class="mb-3 px-3 py-2 rounded-lg border text-xs ${tones[tone]}">${text}</div>`;
+    }
+
+    function ownedOnlyWarningHtml() {
+      return state.toolsOwnedOnly && collection.owned.size === 0 ? noteHtml(tt().emptyCollection) : '';
+    }
+
+    function renderRampPanel(ref) {
+      const T = tt();
+      const ramp = buildRamp(ref);
+      const deep = ramp[0].target;
+      const wash = findClosestPaints(deep, { types: ['Wash / Tinta'], ownedOnly: state.toolsOwnedOnly })[0] || null;
+      return `
+        ${introHtml(T.ramp.intro)}
+        ${ownedOnlyWarningHtml()}
+        ${ref.type === 'Metálico' ? noteHtml(T.ramp.metallic, 'sky') : ''}
+        <label class="inline-flex items-center gap-2 mb-4 cursor-pointer select-none text-xs font-medium text-slate-700 dark:text-slate-300">
+          <input id="rampHueShiftToggle" type="checkbox" ${state.rampHueShift ? 'checked' : ''} class="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 border-slate-300 dark:border-studio-600 bg-slate-100 dark:bg-studio-800" />
+          <span>${T.ramp.hueShift}</span>
+        </label>
+        <div class="flex h-10 rounded-xl overflow-hidden border border-black/15 dark:border-white/10 mb-4">
+          ${ramp.map(r => `<div class="flex-1" style="background-color: ${getProcessedHex(r.match ? r.match.paint.hex : r.target)};" title="${T.ramp.steps[r.key]}"></div>`).join('')}
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
+          ${ramp.map(r => toolMatchRowHtml(T.ramp.steps[r.key], r.target, r.match)).join('')}
+          ${ref.type === 'Metálico' ? '' : toolMatchRowHtml(T.ramp.wash, deep, wash)}
+        </div>`;
+    }
+
+    function collectionChipHtml(p, mode) {
+      const T = tt().collection;
+      const actions = mode === 'owned'
+        ? `<button type="button" data-col-action="own" data-id="${p.id}" title="${tt().ownRemove}" class="px-1.5 text-slate-400 hover:text-rose-500 cursor-pointer" aria-label="${T.remove}">×</button>`
+        : `<button type="button" data-col-action="own" data-id="${p.id}" class="px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 cursor-pointer">${CHECK_SVG}</button>
+           <button type="button" data-col-action="wish" data-id="${p.id}" title="${tt().wishRemove}" class="px-1.5 text-slate-400 hover:text-rose-500 cursor-pointer" aria-label="${T.remove}">×</button>`;
+      return `
+        <div class="inline-flex items-center gap-2 pl-1 pr-1 py-1 rounded-lg bg-slate-50 dark:bg-studio-800 border border-slate-200 dark:border-studio-700 text-xs">
+          <span class="w-5 h-5 rounded ${getSwatchTextureClass(p.type)} border border-black/15" style="background-color: ${getProcessedHex(p.hex)};"></span>
+          <span class="font-semibold">${paintName(p)}</span>
+          <span class="font-mono text-[10px] text-slate-500 dark:text-slate-400">${p.code}</span>
+          <span class="inline-flex items-center">${actions}</span>
+        </div>`;
+    }
+
+    function groupByBrandHtml(ids, mode) {
+      const paints = PAINT_DATABASE.filter(p => ids.has(p.id));
+      return ALL_BRANDS
+        .map(brand => {
+          const list = paints.filter(p => p.brand === brand);
+          if (!list.length) return '';
+          return `
+            <div class="space-y-1.5">
+              <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">${brand} · ${list.length}</p>
+              <div class="flex flex-wrap gap-1.5">${list.map(p => collectionChipHtml(p, mode)).join('')}</div>
+            </div>`;
+        })
+        .join('');
+    }
+
+    function renderCollectionPanel() {
+      const T = tt().collection;
+      const btn = 'px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 dark:border-studio-700 bg-slate-100 dark:bg-studio-800 hover:border-amber-500 transition cursor-pointer';
+      return `
+        ${introHtml(T.intro)}
+        <div class="flex flex-wrap items-center gap-2 mb-4">
+          <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">${T.ownedCount(collection.owned.size, PAINT_DATABASE.length)}</span>
+          <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-500/15 text-sky-700 dark:text-sky-300">${T.wishCount(collection.wishlist.size)}</span>
+          <span class="flex-1"></span>
+          <button type="button" data-tool-action="copy-list" class="${btn}">${T.copyList}</button>
+          <button type="button" data-tool-action="export" class="${btn}">${T.exportBtn}</button>
+          <button type="button" data-tool-action="import" class="${btn}">${T.importBtn}</button>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div class="space-y-3">
+            <h3 class="font-bold text-sm">${T.ownedTitle}</h3>
+            ${collection.owned.size ? groupByBrandHtml(collection.owned, 'owned') : `<p class="text-xs text-slate-500 dark:text-slate-400">${tt().emptyCollection}</p>`}
+          </div>
+          <div class="space-y-3">
+            <h3 class="font-bold text-sm">${T.wishTitle}</h3>
+            ${collection.wishlist.size ? groupByBrandHtml(collection.wishlist, 'wish') : `<p class="text-xs text-slate-500 dark:text-slate-400">${T.wishEmpty}</p>`}
+          </div>
+        </div>`;
+    }
+
+    function ensureMixerState(ref) {
+      if (Array.isArray(state.mixer) && state.mixer.length === MIXER_SLOTS) return;
+      state.mixer = [
+        { id: ref.paint ? ref.paint.id : DEFAULT_REFERENCE_ID, parts: 2 },
+        { id: 'cit-corax', parts: 1 },
+        { id: '', parts: 0 }
+      ];
+    }
+
+    function currentMixHex() {
+      return mixColors(state.mixer.map(m => {
+        const p = PAINT_DATABASE.find(x => x.id === m.id);
+        return { hex: p ? p.hex : null, parts: m.parts };
+      }));
+    }
+
+    function renderMixerPanel(ref) {
+      const T = tt().mixer;
+      ensureMixerState(ref);
+      const optionsFor = (selectedId) => `<option value="">${T.none}</option>` + ALL_BRANDS.map(brand => `
+        <optgroup label="${brand}">
+          ${PAINT_DATABASE.filter(p => p.brand === brand)
+            .map(p => `<option value="${p.id}" ${p.id === selectedId ? 'selected' : ''}>${paintName(p)} · ${p.code}</option>`).join('')}
+        </optgroup>`).join('');
+      const field = 'rounded-lg bg-slate-50 dark:bg-studio-800 border border-slate-300 dark:border-studio-600 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500';
+      return `
+        ${introHtml(T.intro)}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div class="space-y-2.5">
+            ${state.mixer.map((m, i) => {
+              const p = PAINT_DATABASE.find(x => x.id === m.id);
+              return `
+                <div class="flex items-end gap-2">
+                  <span class="w-9 h-9 rounded-lg shrink-0 border border-black/15 dark:border-white/15 ${p ? getSwatchTextureClass(p.type) : 'bg-slate-100 dark:bg-studio-800'}" style="${p ? `background-color: ${getProcessedHex(p.hex)};` : ''}" data-mixer-swatch="${i}"></span>
+                  <label class="flex-1 min-w-0 space-y-1">
+                    <span class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">${T.paint(i + 1)}</span>
+                    <select data-mixer-slot="${i}" data-mixer-field="id" class="w-full px-2 py-2 ${field}">${optionsFor(m.id)}</select>
+                  </label>
+                  <label class="w-20 shrink-0 space-y-1">
+                    <span class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">${T.parts}</span>
+                    <input type="number" min="0" max="20" step="1" value="${m.parts}" data-mixer-slot="${i}" data-mixer-field="parts" class="w-full px-2 py-2 font-mono ${field}" />
+                  </label>
+                </div>`;
+            }).join('')}
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 pt-1">${T.disclaimer}</p>
+          </div>
+          <div id="mixerResult">${mixerResultHtml()}</div>
+        </div>`;
+    }
+
+    function mixerResultHtml() {
+      const T = tt().mixer;
+      const hex = currentMixHex();
+      if (!hex) return noteHtml(T.needPaint);
+      const matches = findClosestPaints(hex, { types: ['Base'], ownedOnly: state.toolsOwnedOnly, n: 3 });
+      return `
+        <div class="space-y-3">
+          <div class="flex items-center gap-3">
+            <div class="w-20 h-16 rounded-xl border border-black/15 dark:border-white/15 shadow-inner shrink-0" style="background-color: ${getProcessedHex(hex)};"></div>
+            <div class="min-w-0">
+              <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">${T.result}</p>
+              <p class="font-mono font-bold text-lg">${hex}</p>
+              <button type="button" data-mixer-use="${hex}" class="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer">${T.useResult} →</button>
+            </div>
+          </div>
+          <h3 class="font-bold text-sm pt-1">${T.closest}</h3>
+          ${ownedOnlyWarningHtml()}
+          <div class="space-y-2">
+            ${matches.length
+              ? matches.map((m, i) => toolMatchRowHtml(`#${i + 1}`, hex, m)).join('')
+              : toolMatchRowHtml('#1', hex, null)}
+          </div>
+        </div>`;
+    }
+
+    function renderSchemesPanel(ref) {
+      const T = tt().schemes;
+      const baseLch = labToLch(hexToLab(ref.hex));
+      const cbActive = state.cbEnabled && state.cbType !== 'none';
+      const profileName = COLORBLIND_PROFILES[state.cbType].name[state.lang];
+      const types = ['Base'];
+
+      const cards = Object.entries(HARMONIES).map(([key, offsets]) => {
+        const items = [{ target: ref.hex, match: ref.paint ? { paint: ref.paint, deltaE: 0 } : (findClosestPaints(ref.hex, { types })[0] || null), isBase: true }];
+        offsets.forEach(off => {
+          const target = lchToHex({ L: baseLch.L, C: baseLch.C, h: (baseLch.h + off + 360) % 360 });
+          const exclude = items.filter(it => it.match).map(it => it.match.paint.id);
+          items.push({ target, match: findClosestPaints(target, { types, ownedOnly: state.toolsOwnedOnly, exclude })[0] || null });
+        });
+
+        let cbHtml = '';
+        if (cbActive) {
+          const sims = items.filter(it => it.match).map(it => ({
+            name: paintName(it.match.paint),
+            lab: rgbToLab(simulateColorBlindness(hexToRgb(it.match.paint.hex), state.cbType))
+          }));
+          const clashes = [];
+          for (let i = 0; i < sims.length; i++) {
+            for (let j = i + 1; j < sims.length; j++) {
+              if (deltaE2000(sims[i].lab, sims[j].lab) < 6) clashes.push(`${sims[i].name} ↔ ${sims[j].name}`);
+            }
+          }
+          cbHtml = clashes.length
+            ? `<p class="mt-2 text-[11px] text-amber-700 dark:text-amber-300"><strong>⚠ ${T.cbWarn(profileName)}</strong> ${clashes.join(' · ')}</p>`
+            : `<p class="mt-2 text-[11px] text-emerald-700 dark:text-emerald-300">✓ ${T.cbOk(profileName)}</p>`;
+        }
+
+        return `
+          <div class="rounded-xl border border-slate-200 dark:border-studio-700/80 p-3 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-bold text-sm">${T.types[key]}</h3>
+              <div class="flex h-5 w-28 rounded-md overflow-hidden border border-black/15 dark:border-white/10">
+                ${items.map(it => `<div class="flex-1" style="background-color: ${getProcessedHex(it.match ? it.match.paint.hex : it.target)};"></div>`).join('')}
+              </div>
+            </div>
+            <div class="space-y-2">
+              ${items.map((it, idx) => toolMatchRowHtml(idx === 0 ? tt().ramp.steps.base : `${T.types[key]} ${idx}`, it.target, it.match)).join('')}
+            </div>
+            ${cbHtml}
+          </div>`;
+      }).join('');
+
+      return `
+        ${introHtml(T.intro)}
+        ${ownedOnlyWarningHtml()}
+        ${baseLch.C < 10 ? noteHtml(T.lowChroma) : ''}
+        ${cbActive ? '' : noteHtml(T.cbHint, 'sky')}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">${cards}</div>`;
+    }
+
+    function renderTools() {
+      if (!PAINT_DATABASE.length || !state.referencePaint) return;
+      const T = tt();
+      const s = t();
+      const ref = getReference();
+      const refName = ref.paint ? `${paintName(ref.paint)} (${ref.paint.brand})` : `${s.customSampleTitle} ${ref.hex}`;
+
+      document.getElementById('toolsTitle').textContent = T.title;
+      document.getElementById('toolsSubtitle').textContent = T.subtitle(refName);
+      document.getElementById('toolsOwnedOnlyLabel').textContent = T.ownedOnly;
+      document.getElementById('toolsOwnedOnlyToggle').checked = state.toolsOwnedOnly;
+
+      document.getElementById('toolTabs').innerHTML = TOOL_TABS.map(tab => {
+        const active = tab === state.toolTab;
+        const badge = tab === 'collection' && collection.owned.size
+          ? ` <span class="ml-1 px-1.5 rounded-full text-[10px] ${active ? 'bg-white/25' : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'}">${collection.owned.size}</span>`
+          : '';
+        return `
+          <button type="button" role="tab" aria-selected="${active}" data-tool-tab="${tab}"
+            class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+              active
+                ? 'bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-500/20'
+                : 'bg-slate-100 dark:bg-studio-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-studio-700 hover:border-amber-400'
+            }">${T.tabs[tab]}${badge}</button>`;
+      }).join('');
+
+      const panel = document.getElementById('toolPanel');
+      if (state.toolTab === 'collection') panel.innerHTML = renderCollectionPanel();
+      else if (state.toolTab === 'mixer') panel.innerHTML = renderMixerPanel(ref);
+      else if (state.toolTab === 'schemes') panel.innerHTML = renderSchemesPanel(ref);
+      else panel.innerHTML = renderRampPanel(ref);
     }
 
     // ==================== SINCRONIZACIÓN DE LA UI DE DALTONISMO ====================
@@ -1759,7 +2470,10 @@
       }
 
       restoreSettings();
+      loadCollection();
       applyLanguageUI();
+      document.getElementById('catalogOwnedOnlyToggle').checked = state.catalogOwnedOnly;
+      document.getElementById('equivOwnedOnlyToggle').checked = state.equivOwnedOnly;
 
       document.getElementById('sameFinishToggle').checked = state.sameFinishOnly;
       document.getElementById('excludeSameBrandToggle').checked = state.excludeSameBrand;
@@ -1882,12 +2596,15 @@
       document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
 
       document.getElementById('resetAllBtn').addEventListener('click', () => {
+        state.catalogOwnedOnly = false;
+        document.getElementById('catalogOwnedOnlyToggle').checked = false;
         setSearch('');
         resetFilters();
       });
 
       // 3. Catálogo de Pinturas
       document.getElementById('paintCatalogGrid').addEventListener('click', (e) => {
+        if (e.target.closest('[data-col-action]')) return;
         const card = e.target.closest('.paint-card');
         if (!card) return;
         const found = PAINT_DATABASE.find(p => p.id === card.getAttribute('data-paint-id'));
@@ -2007,6 +2724,147 @@
         state.cbSplitSwatch = e.target.checked;
         syncColorBlindUI();
         saveSettings();
+      });
+
+      // 9. Mi colección: botones ✓ / carrito en catálogo, equivalencias y herramientas
+      const refreshCollectionViews = () => {
+        saveCollection();
+        renderCatalog();
+        renderEquivalents();
+      };
+
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-col-action]');
+        if (!btn) return;
+        e.stopPropagation();
+        const paint = PAINT_DATABASE.find(p => p.id === btn.getAttribute('data-id'));
+        if (!paint) return;
+        const T = tt().toasts;
+        if (btn.getAttribute('data-col-action') === 'own') {
+          if (collection.owned.has(paint.id)) {
+            collection.owned.delete(paint.id);
+            showToast(T.ownedRemoved(paintName(paint)));
+          } else {
+            collection.owned.add(paint.id);
+            collection.wishlist.delete(paint.id);
+            showToast(T.ownedAdded(paintName(paint)));
+          }
+        } else if (collection.wishlist.has(paint.id)) {
+          collection.wishlist.delete(paint.id);
+          showToast(T.wishRemoved(paintName(paint)));
+        } else {
+          collection.wishlist.add(paint.id);
+          showToast(T.wishAdded(paintName(paint)));
+        }
+        refreshCollectionViews();
+      });
+
+      document.getElementById('catalogOwnedOnlyToggle').addEventListener('change', (e) => {
+        state.catalogOwnedOnly = e.target.checked;
+        renderCatalog();
+        saveSettings();
+      });
+
+      document.getElementById('equivOwnedOnlyToggle').addEventListener('change', (e) => {
+        state.equivOwnedOnly = e.target.checked;
+        renderEquivalentsList();
+        saveSettings();
+      });
+
+      // 10. Herramientas del pintor
+      const toolsSection = document.getElementById('toolsSection');
+
+      document.getElementById('toolsOwnedOnlyToggle').addEventListener('change', (e) => {
+        state.toolsOwnedOnly = e.target.checked;
+        renderTools();
+        saveSettings();
+      });
+
+      toolsSection.addEventListener('click', async (e) => {
+        const tab = e.target.closest('[data-tool-tab]');
+        if (tab) {
+          state.toolTab = tab.getAttribute('data-tool-tab');
+          renderTools();
+          saveSettings();
+          return;
+        }
+
+        const useBtn = e.target.closest('[data-use-id]');
+        if (useBtn) {
+          const paint = PAINT_DATABASE.find(p => p.id === useBtn.getAttribute('data-use-id'));
+          if (paint) {
+            setReference(paint);
+            showToast(t().toasts.refChanged(paintName(paint)));
+          }
+          return;
+        }
+
+        const mixUse = e.target.closest('[data-mixer-use]');
+        if (mixUse) {
+          customHexInput.value = mixUse.getAttribute('data-mixer-use');
+          applyCustomColor();
+          return;
+        }
+
+        const action = e.target.closest('[data-tool-action]');
+        if (!action) return;
+        const T = tt().toasts;
+        const kind = action.getAttribute('data-tool-action');
+        if (kind === 'copy-list') {
+          const items = PAINT_DATABASE.filter(p => collection.wishlist.has(p.id));
+          if (!items.length) {
+            showToast(T.listEmpty);
+            return;
+          }
+          const text = `ChromaMini · ${tt().collection.wishTitle}\n` + items.map(p => `- ${p.brand} · ${p.code} · ${paintName(p)}`).join('\n');
+          await copyTextToClipboard(text, T.listCopied);
+        } else if (kind === 'export') {
+          await copyTextToClipboard(JSON.stringify({ app: 'chromamini', owned: [...collection.owned], wishlist: [...collection.wishlist] }), T.exported);
+        } else if (kind === 'import') {
+          const raw = window.prompt(tt().collection.importPrompt);
+          if (!raw) return;
+          try {
+            const { owned, wishlist } = sanitizeCollection(JSON.parse(raw));
+            if (!owned.size && !wishlist.size) throw new Error('empty');
+            collection.owned = owned;
+            collection.wishlist = wishlist;
+            refreshCollectionViews();
+            showToast(T.imported(owned.size));
+          } catch (err) {
+            showToast(T.importError);
+          }
+        }
+      });
+
+      const onToolInput = (e) => {
+        const el = e.target;
+        if (el.id === 'rampHueShiftToggle') {
+          state.rampHueShift = el.checked;
+          renderTools();
+          saveSettings();
+          return;
+        }
+        if (!el.hasAttribute('data-mixer-slot')) return;
+        const slot = state.mixer[parseInt(el.getAttribute('data-mixer-slot'), 10)];
+        if (el.getAttribute('data-mixer-field') === 'id') {
+          slot.id = el.value;
+          if (slot.id && slot.parts === 0) {
+            slot.parts = 1;
+            const partsInput = toolsSection.querySelector(`input[data-mixer-slot="${el.getAttribute('data-mixer-slot')}"]`);
+            if (partsInput) partsInput.value = '1';
+          }
+          const swatch = toolsSection.querySelector(`[data-mixer-swatch="${el.getAttribute('data-mixer-slot')}"]`);
+          const p = PAINT_DATABASE.find(x => x.id === slot.id);
+          if (swatch) swatch.style.backgroundColor = p ? getProcessedHex(p.hex) : '';
+        } else {
+          slot.parts = Math.max(0, Math.min(20, parseInt(el.value, 10) || 0));
+        }
+        document.getElementById('mixerResult').innerHTML = mixerResultHtml();
+        saveSettings();
+      };
+      toolsSection.addEventListener('change', onToolInput);
+      toolsSection.addEventListener('input', (e) => {
+        if (e.target.getAttribute('data-mixer-field') === 'parts') onToolInput(e);
       });
 
       // Render inicial completo (incluye estado restaurado de daltonismo)
