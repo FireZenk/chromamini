@@ -89,29 +89,29 @@
 
   <!-- Barra de navegación superior -->
   <header class="sticky top-0 z-30 backdrop-blur-md bg-white/90 dark:bg-studio-900/90 border-b border-slate-200 dark:border-studio-700/80">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap lg:flex-nowrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 via-orange-500 to-rose-600 flex items-center justify-center shadow-lg shadow-amber-500/20 text-white shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
             <path d="M8.5 14a3.5 3.5 0 0 0 3.5 3.5"/>
           </svg>
         </div>
-        <div>
+        <div class="min-w-0">
           <div class="flex items-center gap-2">
             <h1 class="font-extrabold text-lg sm:text-xl tracking-tight">ChromaMini</h1>
-            <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+            <span class="hidden sm:inline-flex lg:hidden xl:inline-flex shrink-0 whitespace-nowrap items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
               ES / EN · ΔE 2000
             </span>
           </div>
-          <p id="headerSubtitle" class="text-xs text-slate-500 dark:text-slate-400 hidden md:block">
+          <p id="headerSubtitle" class="text-xs text-slate-500 dark:text-slate-400 hidden md:block truncate">
             Conversor y comparador perceptual de pinturas acrílicas para modelismo
           </p>
         </div>
       </div>
 
       <!-- Controles de cabecera: Instalar App + Daltonismo + Idioma UI + Tema -->
-      <div class="flex flex-wrap items-center gap-2 sm:gap-2.5">
+      <div class="flex flex-wrap lg:flex-nowrap lg:shrink-0 items-center gap-2 sm:gap-2.5">
         <!-- Botón Instalar Web-App -->
         <button id="installAppBtn" type="button"
           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-bold shadow-md shadow-amber-500/20 active:scale-[0.98] transition cursor-pointer">
@@ -1272,7 +1272,9 @@
       quickVermilion.textContent = s.quickVermilion;
       quickVermilion.setAttribute('data-quick', s.quickVermilion);
 
-      document.getElementById('headerSubtitle').textContent = s.headerSubtitle;
+      const headerSubtitle = document.getElementById('headerSubtitle');
+      headerSubtitle.textContent = s.headerSubtitle;
+      headerSubtitle.title = s.headerSubtitle;
       document.getElementById('installAppBtnLabel').textContent = s.installApp;
       document.getElementById('cbHeaderLabel').textContent = s.cbHeader;
       document.getElementById('cbHeaderTestText').textContent = s.cbTestShort;
