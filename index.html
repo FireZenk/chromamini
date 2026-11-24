@@ -12,9 +12,21 @@
 
   <!-- Favicon SVG embebido (gota de pintura con gradiente) -->
   <link id="dynamicFavicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23f59e0b'/%3E%3Cstop offset='55%25' stop-color='%23f97316'/%3E%3Cstop offset='100%25' stop-color='%23e11d48'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='%2311131a'/%3E%3Cpath d='M32 10 L46.5 24.5 A20.5 20.5 0 1 1 17.5 24.5 Z' fill='url(%23g)'/%3E%3Cpath d='M23 36 A9 9 0 0 0 32 45' fill='none' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round' opacity='0.85'/%3E%3C/svg%3E" />
-  <link id="appleTouchIcon" rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23f59e0b'/%3E%3Cstop offset='55%25' stop-color='%23f97316'/%3E%3Cstop offset='100%25' stop-color='%23e11d48'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='180' height='180' rx='40' fill='%2311131a'/%3E%3Cpath d='M90 28 L131 69 A58 58 0 1 1 49 69 Z' fill='url(%23g)'/%3E%3Cpath d='M65 102 A25 25 0 0 0 90 127' fill='none' stroke='%23ffffff' stroke-width='9' stroke-linecap='round' opacity='0.85'/%3E%3C/svg%3E" />
-  <link id="pwaManifestLink" rel="manifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link id="appleTouchIcon" rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
 
+  <script>
+    // Tema e idioma guardados: se aplican antes del primer pintado para evitar parpadeos
+    (function () {
+      try {
+        var saved = JSON.parse(localStorage.getItem('chromamini.settings') || '{}');
+        var dark = saved.theme ? saved.theme === 'dark' : true;
+        document.documentElement.classList.toggle('dark', dark);
+        if (saved.lang === 'en' || saved.lang === 'es') document.documentElement.lang = saved.lang;
+      } catch (e) { /* almacenamiento no disponible */ }
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -89,7 +101,7 @@
           <div class="flex items-center gap-2">
             <h1 class="font-extrabold text-lg sm:text-xl tracking-tight">ChromaMini</h1>
             <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25">
-              ES / EN · ΔE Lab
+              ES / EN · ΔE 2000
             </span>
           </div>
           <p id="headerSubtitle" class="text-xs text-slate-500 dark:text-slate-400 hidden md:block">
@@ -143,7 +155,7 @@
         </div>
 
         <!-- Selector de Idioma de la Interfaz (ES / EN) -->
-        <div class="inline-flex rounded-xl bg-slate-100 dark:bg-studio-800 p-0.5 border border-slate-200 dark:border-studio-700" role="group" aria-label="Idioma de la interfaz">
+        <div class="inline-flex rounded-xl bg-slate-100 dark:bg-studio-800 p-0.5 border border-slate-200 dark:border-studio-700" id="langGroup" role="group" aria-label="Idioma de la interfaz">
           <button type="button" id="langEsBtn" data-lang="es"
             class="lang-btn px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-studio-700 text-slate-900 dark:text-white shadow-sm transition cursor-pointer">
             ES
@@ -242,7 +254,7 @@
           <!-- Búsquedas rápidas de ejemplo -->
           <div id="quickSearchContainer" class="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
             <span id="quickTestsLabel" class="text-slate-400 dark:text-slate-500 mr-1">Pruebas rápidas:</span>
-            <button type="button" data-quick="Rojo Bermellón" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition cursor-pointer">Rojo Bermellón</button>
+            <button type="button" id="quickVermilionBtn" data-quick="Rojo Bermellón" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition cursor-pointer">Rojo Bermellón</button>
             <button type="button" data-quick="1763" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 font-mono transition cursor-pointer">1763 (GSW)</button>
             <button type="button" data-quick="Hueso" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition cursor-pointer">Hueso / Bone</button>
             <button type="button" data-quick="70.909" class="quick-search px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 font-mono transition cursor-pointer">70.909</button>
@@ -410,7 +422,7 @@
               </p>
             </div>
             <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-studio-800 text-slate-500 dark:text-slate-400">
-              CIELAB ΔE
+              CIEDE2000
             </span>
           </div>
 
@@ -500,178 +512,29 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="text-center sm:text-left space-y-1">
         <p class="font-semibold text-slate-700 dark:text-slate-200">
-          <span data-i18n="footerAuthor">© 2026 FireZenk · Creado por FireZenk</span>
+          <span id="footerAuthor">© 2026 FireZenk · Creado por FireZenk</span>
         </p>
-        <p data-i18n="footerDisclaimer" class="text-[11px] text-slate-500 dark:text-slate-400">
+        <p id="footerDisclaimer" class="text-[11px] text-slate-500 dark:text-slate-400">
           ChromaMini · Los valores HEX son aproximaciones digitales calibradas; el acabado final puede variar según imprimación y barniz.
         </p>
       </div>
 
-      <a href="https://github.com/FireZenk/chromamini" target="_blank" rel="noopener noreferrer"
+      <a id="footerRepoAnchor" href="https://github.com/FireZenk/chromamini" target="_blank" rel="noopener noreferrer"
         class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-amber-500/15 dark:bg-studio-800 dark:hover:bg-amber-500/20 text-slate-700 dark:text-slate-200 hover:text-amber-600 dark:hover:text-amber-400 border border-slate-200 dark:border-studio-700 hover:border-amber-500/40 font-semibold transition shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
         </svg>
-        <span data-i18n="footerRepoLink">Reportar errores o contribuir en GitHub</span>
+        <span id="footerRepoLink">Reportar errores o contribuir en GitHub</span>
       </a>
     </div>
   </footer>
 
   <script>
     /**
-     * BASE DE DATOS DE PINTURAS PARA MINIATURAS (100+ referencias calibradas)
-     * Bilingüe ES / EN + Referencias numéricas oficiales
+     * BASE DE DATOS DE PINTURAS: se carga desde paints.json (ver loadPaintDatabase).
+     * Formato: { id, brand, range, name_es, name_en, code, type, hex }
      */
-    const PAINT_DATABASE = [
-      // ==================== ROJOS Y CARMESÍES ====================
-      { id: 'cit-mephiston', brand: 'Citadel', range: 'Base', name_es: 'Rojo Mefistón', name_en: 'Mephiston Red', code: '21-03', type: 'Base', hex: '#9A1B1E' },
-      { id: 'cit-khorne', brand: 'Citadel', range: 'Base', name_es: 'Rojo Khorne', name_en: 'Khorne Red', code: '21-04', type: 'Base', hex: '#6A0F14' },
-      { id: 'cit-evilsunz', brand: 'Citadel', range: 'Layer', name_es: 'Escarlata Sol Malvado', name_en: 'Evil Sunz Scarlet', code: '22-03', type: 'Base', hex: '#C21F23' },
-      { id: 'cit-wildrider', brand: 'Citadel', range: 'Layer', name_es: 'Rojo Jinete Salvaje', name_en: 'Wild Rider Red', code: '22-04', type: 'Base', hex: '#E43625' },
-      { id: 'vmc-vermilion', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Rojo Bermellón', name_en: 'Vermilion', code: '70.909', type: 'Base', hex: '#C62824' },
-      { id: 'vmc-flatred', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Rojo Mate', name_en: 'Flat Red', code: '70.957', type: 'Base', hex: '#9E2326' },
-      { id: 'vmc-burntred', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Rojo Tostado', name_en: 'Burnt Red', code: '70.814', type: 'Base', hex: '#69191E' },
-      { id: 'vmc-carmine', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Rojo Carmín', name_en: 'Carmine Red', code: '70.908', type: 'Base', hex: '#B41D25' },
-      { id: 'vgc-bloodyred', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Rojo Sanguina', name_en: 'Bloody Red', code: '72.010', type: 'Base', hex: '#BE1F24' },
-      { id: 'vgc-goryred', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Rojo Víscera', name_en: 'Gory Red', code: '72.011', type: 'Base', hex: '#6B1217' },
-      { id: 'vgc-scarletblood', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Sangre Escarlata', name_en: 'Scarlet Blood', code: '72.106', type: 'Base', hex: '#991C21' },
-      { id: 'gsw-bloodred', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Rojo Sangre', name_en: 'Blood Red', code: '1763', type: 'Base', hex: '#9B191D' },
-      { id: 'gsw-redtruth', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Rojo Verdad', name_en: 'Red Truth', code: '1764', type: 'Base', hex: '#C42326' },
-      { id: 'gsw-hellfire', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Rojo Fuego Infernal', name_en: 'Hellfire Red', code: '1815', type: 'Base', hex: '#681116' },
-      { id: 'ak-bloodred', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Rojo Sangre', name_en: 'Blood Red', code: 'AK11088', type: 'Base', hex: '#9B1B20' },
-      { id: 'ak-deepred', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Rojo Profundo', name_en: 'Deep Red', code: 'AK11092', type: 'Base', hex: '#6C1217' },
-      { id: 'ap-dragonred', brand: 'The Army Painter', range: 'Warpaints Fanatic', name_es: 'Rojo Dragón', name_en: 'Dragon Red', code: 'WP3004', type: 'Base', hex: '#9A1D21' },
-      { id: 'ap-pure-red', brand: 'The Army Painter', range: 'Warpaints Fanatic', name_es: 'Rojo Puro', name_en: 'Pure Red', code: 'WP3005', type: 'Base', hex: '#C32025' },
-
-      // ==================== NARANJAS Y AMARILLOS ====================
-      { id: 'cit-averland', brand: 'Citadel', range: 'Base', name_es: 'Ocaso de Averland', name_en: 'Averland Sunset', code: '21-01', type: 'Base', hex: '#FBB81C' },
-      { id: 'cit-yriel', brand: 'Citadel', range: 'Layer', name_es: 'Amarillo Yriel', name_en: 'Yriel Yellow', code: '22-01', type: 'Base', hex: '#FFD900' },
-      { id: 'cit-flashgitz', brand: 'Citadel', range: 'Layer', name_es: 'Amarillo Tipejo Vacilón', name_en: 'Flash Gitz Yellow', code: '22-02', type: 'Base', hex: '#FFF300' },
-      { id: 'cit-trollslayer', brand: 'Citadel', range: 'Layer', name_es: 'Naranja Matatrolls', name_en: 'Troll Slayer Orange', code: '22-05', type: 'Base', hex: '#F36C21' },
-      { id: 'cit-jokaero', brand: 'Citadel', range: 'Base', name_es: 'Naranja Jokaero', name_en: 'Jokaero Orange', code: '21-02', type: 'Base', hex: '#EE3823' },
-      { id: 'vmc-flatyellow', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Amarillo Mate', name_en: 'Flat Yellow', code: '70.953', type: 'Base', hex: '#F9D616' },
-      { id: 'vmc-goldbrown', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Marrón Dorado / Ocre', name_en: 'Goldbrown', code: '70.877', type: 'Base', hex: '#E6A622' },
-      { id: 'vmc-germanyorange', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Naranja Alemán', name_en: 'German Orange', code: '70.805', type: 'Base', hex: '#EC5224' },
-      { id: 'vgc-sunyellow', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Amarillo Soleado', name_en: 'Sun Yellow', code: '72.006', type: 'Base', hex: '#FCE016' },
-      { id: 'vgc-orangefire', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Naranja Fuego', name_en: 'Orange Fire', code: '72.008', type: 'Base', hex: '#F16822' },
-      { id: 'gsw-sunyellow', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Amarillo Sol', name_en: 'Sun Yellow', code: '1758', type: 'Base', hex: '#FAD618' },
-      { id: 'gsw-emberorange', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Naranja Ascua', name_en: 'Ember Orange', code: '1761', type: 'Base', hex: '#EE6620' },
-      { id: 'ak-deepyellow', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Amarillo Intenso', name_en: 'Deep Yellow', code: 'AK11044', type: 'Base', hex: '#F7B71E' },
-      { id: 'ap-daemonic', brand: 'The Army Painter', range: 'Warpaints Fanatic', name_es: 'Amarillo Demoníaco', name_en: 'Daemonic Yellow', code: 'WP3014', type: 'Base', hex: '#FBD818' },
-
-      // ==================== VERDES ====================
-      { id: 'cit-waaagh', brand: 'Citadel', range: 'Base', name_es: 'Carne de Waaagh!', name_en: 'Waaagh! Flesh', code: '21-13', type: 'Base', hex: '#1F562A' },
-      { id: 'cit-warboss', brand: 'Citadel', range: 'Layer', name_es: 'Verde Kaudillo', name_en: 'Warboss Green', code: '22-27', type: 'Base', hex: '#3E8E3B' },
-      { id: 'cit-moot', brand: 'Citadel', range: 'Layer', name_es: 'Verde Moot', name_en: 'Moot Green', code: '22-29', type: 'Base', hex: '#52B448' },
-      { id: 'cit-deathworld', brand: 'Citadel', range: 'Base', name_es: 'Verde Bosque Letal', name_en: 'Death World Forest', code: '21-15', type: 'Base', hex: '#5C6736' },
-      { id: 'cit-caliban', brand: 'Citadel', range: 'Base', name_es: 'Verde Caliban', name_en: 'Caliban Green', code: '21-12', type: 'Base', hex: '#103B25' },
-      { id: 'cit-castellan', brand: 'Citadel', range: 'Base', name_es: 'Verde Castellano', name_en: 'Castellan Green', code: '21-14', type: 'Base', hex: '#314726' },
-      { id: 'vmc-olive', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Verde Oliva', name_en: 'Olive Green', code: '70.967', type: 'Base', hex: '#4F6132' },
-      { id: 'vmc-darkgreen', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Verde Oscuro', name_en: 'Dark Green', code: '70.970', type: 'Base', hex: '#18422A' },
-      { id: 'vmc-lime', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Verde Lima', name_en: 'Lime Green', code: '70.827', type: 'Base', hex: '#6BB045' },
-      { id: 'vgc-goblingreen', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Verde Goblin', name_en: 'Goblin Green', code: '72.030', type: 'Base', hex: '#3B8A38' },
-      { id: 'vgc-sickgreen', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Verde Asqueroso / Orco', name_en: 'Sick Green', code: '72.029', type: 'Base', hex: '#215B2E' },
-      { id: 'vgc-escorpena', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Verde Escorpena', name_en: 'Scorpy Green', code: '72.032', type: 'Base', hex: '#4FB346' },
-      { id: 'gsw-orcskin', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Piel de Orco', name_en: 'Orc Skin', code: '1779', type: 'Base', hex: '#3D8C3A' },
-      { id: 'gsw-huntergreen', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Verde Cazador', name_en: 'Hunter Green', code: '1782', type: 'Base', hex: '#133E27' },
-      { id: 'gsw-olive', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Verde Oliva Campo', name_en: 'Field Olive', code: '1828', type: 'Base', hex: '#596535' },
-      { id: 'ak-frog', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Verde Rana', name_en: 'Frog Green', code: 'AK11145', type: 'Base', hex: '#418E3C' },
-      { id: 'ap-greenskin', brand: 'The Army Painter', range: 'Warpaints Fanatic', name_es: 'Piel Verde', name_en: 'Greenskin', code: 'WP3045', type: 'Base', hex: '#235C2F' },
-
-      // ==================== AZULES Y TURQUESAS ====================
-      { id: 'cit-macragge', brand: 'Citadel', range: 'Base', name_es: 'Azul Macragge', name_en: 'Macragge Blue', code: '21-08', type: 'Base', hex: '#1A3E78' },
-      { id: 'cit-kantor', brand: 'Citadel', range: 'Base', name_es: 'Azul Kantor', name_en: 'Kantor Blue', code: '21-07', type: 'Base', hex: '#122449' },
-      { id: 'cit-calgar', brand: 'Citadel', range: 'Layer', name_es: 'Azul Calgar', name_en: 'Calgar Blue', code: '22-14', type: 'Base', hex: '#3B6EB3' },
-      { id: 'cit-sotek', brand: 'Citadel', range: 'Layer', name_es: 'Verde Sotek / Turquesa', name_en: 'Sotek Green', code: '22-19', type: 'Base', hex: '#0D6A7D' },
-      { id: 'cit-thousand', brand: 'Citadel', range: 'Base', name_es: 'Azul Mil Hijos', name_en: 'Thousand Sons Blue', code: '21-31', type: 'Base', hex: '#0E5571' },
-      { id: 'vmc-prussian', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Azul de Prusia Oscuro', name_en: 'Dark Prussian Blue', code: '70.899', type: 'Base', hex: '#14264B' },
-      { id: 'vmc-flatblue', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Azul Mate', name_en: 'Flat Blue', code: '70.962', type: 'Base', hex: '#1D437E' },
-      { id: 'vgc-ultramarine', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Azul Ultramar', name_en: 'Ultramarine Blue', code: '72.022', type: 'Base', hex: '#1C417D' },
-      { id: 'vgc-magicblue', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Azul Mágico', name_en: 'Magic Blue', code: '72.021', type: 'Base', hex: '#2463A8' },
-      { id: 'gsw-ultramarine', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Azul Ultramarino', name_en: 'Ultramarine Blue', code: '1771', type: 'Base', hex: '#1B3F7B' },
-      { id: 'gsw-abyssblue', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Azul Abisal', name_en: 'Abyss Blue', code: '1773', type: 'Base', hex: '#13254B' },
-      { id: 'ak-ducat', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Azul Ducado', name_en: 'Ducat Blue', code: 'AK11181', type: 'Base', hex: '#1D4380' },
-      { id: 'ap-ultramarine', brand: 'The Army Painter', range: 'Warpaints Fanatic', name_es: 'Azul Ultramar', name_en: 'Ultramarine Blue', code: 'WP3027', type: 'Base', hex: '#1C407A' },
-
-      // ==================== PÚRPURAS Y MAGENTAS ====================
-      { id: 'cit-naggaroth', brand: 'Citadel', range: 'Base', name_es: 'Noche de Naggaroth', name_en: 'Naggaroth Night', code: '21-06', type: 'Base', hex: '#3B234A' },
-      { id: 'cit-xereus', brand: 'Citadel', range: 'Layer', name_es: 'Púrpura Xereus', name_en: 'Xereus Purple', code: '22-09', type: 'Base', hex: '#5A2C6D' },
-      { id: 'cit-screamer', brand: 'Citadel', range: 'Base', name_es: 'Rosa Aullador', name_en: 'Screamer Pink', code: '21-05', type: 'Base', hex: '#7A1D44' },
-      { id: 'vgc-hexedlichen', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Liquen Maldito / Púrpura', name_en: 'Hexed Lichen', code: '72.015', type: 'Base', hex: '#562968' },
-      { id: 'gsw-royalpurple', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Púrpura Real', name_en: 'Royal Purple', code: '1768', type: 'Base', hex: '#582B6B' },
-
-      // ==================== HUESOS, CREMAS Y PIELES ====================
-      { id: 'cit-ushabti', brand: 'Citadel', range: 'Layer', name_es: 'Hueso Ushabti', name_en: 'Ushabti Bone', code: '22-33', type: 'Base', hex: '#D8CFA6' },
-      { id: 'cit-wraithbone', brand: 'Citadel', range: 'Base', name_es: 'Hueso Espectral', name_en: 'Wraithbone', code: '21-52', type: 'Base', hex: '#E5DEC3' },
-      { id: 'cit-cadian', brand: 'Citadel', range: 'Layer', name_es: 'Carne de Cadia', name_en: 'Cadian Fleshtone', code: '22-38', type: 'Base', hex: '#C88868' },
-      { id: 'cit-bugmans', brand: 'Citadel', range: 'Base', name_es: 'Brillo de Bugman', name_en: "Bugman's Glow", code: '21-19', type: 'Base', hex: '#884E43' },
-      { id: 'vmc-ivory', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Marfil', name_en: 'Ivory', code: '70.918', type: 'Base', hex: '#EAE3C8' },
-      { id: 'vmc-pale-sand', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Arena Clara', name_en: 'Pale Sand', code: '70.837', type: 'Base', hex: '#DFC99B' },
-      { id: 'vgc-bonewhite', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Blanco Hueso', name_en: 'Bone White', code: '72.034', type: 'Base', hex: '#DAD1A8' },
-      { id: 'vgc-dwarfskin', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Piel de Enano', name_en: 'Dwarf Skin', code: '72.041', type: 'Base', hex: '#C68565' },
-      { id: 'gsw-bleachedbone', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Hueso Blanqueado', name_en: 'Bleached Bone', code: '1755', type: 'Base', hex: '#DBD1A7' },
-      { id: 'gsw-ivorytusk', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Colmillo de Marfil', name_en: 'Ivory Tusk', code: '1754', type: 'Base', hex: '#E8E0C4' },
-      { id: 'ak-decompflesh', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Hueso / Arena Clara', name_en: 'Decomposed Flesh / Bone', code: 'AK11048', type: 'Base', hex: '#D8CEA4' },
-      { id: 'ap-skeletonbone', brand: 'The Army Painter', range: 'Warpaints Fanatic', name_es: 'Hueso de Esqueleto', name_en: 'Skeleton Bone', code: 'WP3081', type: 'Base', hex: '#D7CEA5' },
-
-      // ==================== MARRONES Y CUEROS ====================
-      { id: 'cit-mournfang', brand: 'Citadel', range: 'Base', name_es: 'Marrón Colmillo Fúnebre', name_en: 'Mournfang Brown', code: '21-22', type: 'Base', hex: '#63331C' },
-      { id: 'cit-rhinox', brand: 'Citadel', range: 'Base', name_es: 'Piel de Rhinox', name_en: 'Rhinox Hide', code: '21-23', type: 'Base', hex: '#3D231C' },
-      { id: 'cit-xv88', brand: 'Citadel', range: 'Base', name_es: 'Marrón XV-88', name_en: 'XV-88', code: '21-21', type: 'Base', hex: '#754C29' },
-      { id: 'vmc-flatbrown', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Marrón Mate', name_en: 'Flat Brown', code: '70.984', type: 'Base', hex: '#653520' },
-      { id: 'vmc-chocolate', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Marrón Chocolate', name_en: 'Chocolate Brown', code: '70.872', type: 'Base', hex: '#42261E' },
-      { id: 'vgc-beastybrown', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Marrón Bestia', name_en: 'Beasty Brown', code: '72.043', type: 'Base', hex: '#64351E' },
-      { id: 'vgc-charredbrown', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Marrón Carbonizado', name_en: 'Charred Brown', code: '72.045', type: 'Base', hex: '#3B221B' },
-      { id: 'gsw-leatherbrown', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Marrón Cuero', name_en: 'Leather Brown', code: '1791', type: 'Base', hex: '#65341D' },
-      { id: 'gsw-darkwood', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Madera Oscura', name_en: 'Dark Wood', code: '1794', type: 'Base', hex: '#3E231C' },
-      { id: 'ak-mahogany', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Marrón Caoba', name_en: 'Mahogany Brown', code: 'AK11108', type: 'Base', hex: '#62321C' },
-
-      // ==================== NEGROS, BLANCOS Y GRISES ====================
-      { id: 'cit-abaddon', brand: 'Citadel', range: 'Base', name_es: 'Negro Abaddon', name_en: 'Abaddon Black', code: '21-25', type: 'Base', hex: '#141518' },
-      { id: 'cit-corax', brand: 'Citadel', range: 'Base', name_es: 'Blanco Corax', name_en: 'Corax White', code: '21-51', type: 'Base', hex: '#F2F3F5' },
-      { id: 'cit-mechanicus', brand: 'Citadel', range: 'Base', name_es: 'Gris Estándar Mechanicus', name_en: 'Mechanicus Standard Grey', code: '21-24', type: 'Base', hex: '#4B5054' },
-      { id: 'cit-dawnstone', brand: 'Citadel', range: 'Layer', name_es: 'Piedra del Alba', name_en: 'Dawnstone', code: '22-49', type: 'Base', hex: '#7A8084' },
-      { id: 'vmc-black', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Negro', name_en: 'Black', code: '70.950', type: 'Base', hex: '#151619' },
-      { id: 'vmc-white', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Blanco', name_en: 'White', code: '70.951', type: 'Base', hex: '#F6F7F9' },
-      { id: 'vmc-neutralgrey', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Gris Neutral', name_en: 'Neutral Grey', code: '70.992', type: 'Base', hex: '#676C70' },
-      { id: 'vgc-deadwhite', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Blanco Calavera', name_en: 'Dead White', code: '72.001', type: 'Base', hex: '#F7F8FA' },
-      { id: 'gsw-black', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Negro Puro', name_en: 'Black', code: '1751', type: 'Base', hex: '#131417' },
-      { id: 'gsw-white', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Blanco Puro', name_en: 'White', code: '1752', type: 'Base', hex: '#F5F6F8' },
-      { id: 'gsw-wolfgrey', brand: 'Green Stuff World', range: 'Maxx Formula', name_es: 'Gris Lobo', name_en: 'Wolf Grey', code: '1802', type: 'Base', hex: '#4E5358' },
-      { id: 'ak-intenseblack', brand: 'AK 3rd Gen', range: '3rd Gen Acrylic', name_es: 'Negro Intenso', name_en: 'Intense Black', code: 'AK11029', type: 'Base', hex: '#121316' },
-
-      // ==================== METÁLICOS (ACEROS, OROS, BRONCES) ====================
-      { id: 'cit-leadbelcher', brand: 'Citadel', range: 'Base', name_es: 'Escupelomo / Acero Oscuro', name_en: 'Leadbelcher', code: '21-28', type: 'Metálico', hex: '#696F75' },
-      { id: 'cit-ironbreaker', brand: 'Citadel', range: 'Layer', name_es: 'Rompehierros', name_en: 'Ironbreaker', code: '22-59', type: 'Metálico', hex: '#949A9F' },
-      { id: 'cit-stormhost', brand: 'Citadel', range: 'Layer', name_es: 'Plata Stormhost', name_en: 'Stormhost Silver', code: '22-60', type: 'Metálico', hex: '#C7CDD2' },
-      { id: 'cit-retributor', brand: 'Citadel', range: 'Base', name_es: 'Armadura Retributor / Oro', name_en: 'Retributor Armour', code: '21-35', type: 'Metálico', hex: '#C69636' },
-      { id: 'cit-balthasar', brand: 'Citadel', range: 'Base', name_es: 'Oro Balthasar / Bronce', name_en: 'Balthasar Gold', code: '21-26', type: 'Metálico', hex: '#88593B' },
-      { id: 'vmc-gunmetal', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Gris Metalizado / Acero', name_en: 'Gunmetal Grey', code: '70.863', type: 'Metálico', hex: '#646A70' },
-      { id: 'vmc-silver', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Plata', name_en: 'Silver', code: '70.997', type: 'Metálico', hex: '#BFC5CA' },
-      { id: 'vmc-oldgold', brand: 'Vallejo Model Color', range: 'Model Color', name_es: 'Oro Viejo', name_en: 'Old Gold', code: '70.878', type: 'Metálico', hex: '#B88A34' },
-      { id: 'vgc-gloriousgold', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Oro Glorioso', name_en: 'Glorious Gold', code: '72.056', type: 'Metálico', hex: '#C99838' },
-      { id: 'vgc-chainmail', brand: 'Vallejo Game Color', range: 'Game Color', name_es: 'Malla de Acero', name_en: 'Chainmail Silver', code: '72.053', type: 'Metálico', hex: '#969CA1' },
-      { id: 'gsw-anthracite', brand: 'Green Stuff World', range: 'Metal Color', name_es: 'Metal Antracita', name_en: 'Anthracite Metal', code: '1861', type: 'Metálico', hex: '#63696F' },
-      { id: 'gsw-quicksilver', brand: 'Green Stuff World', range: 'Metal Color', name_es: 'Plata Viva / Mercurio', name_en: 'Quicksilver', code: '1863', type: 'Metálico', hex: '#C4CACF' },
-      { id: 'gsw-shinygold', brand: 'Green Stuff World', range: 'Metal Color', name_es: 'Oro Brillante', name_en: 'Shiny Gold', code: '1866', type: 'Metálico', hex: '#C89737' },
-      { id: 'gsw-gladiatorbronze', brand: 'Green Stuff World', range: 'Metal Color', name_es: 'Bronce Gladiador', name_en: 'Gladiator Bronze', code: '1869', type: 'Metálico', hex: '#8A5B3C' },
-      { id: 'ak-gunmetal', brand: 'AK 3rd Gen', range: '3rd Gen Metallic', name_es: 'Acero Pavonado / Gunmetal', name_en: 'Gunmetal', code: 'AK11212', type: 'Metálico', hex: '#666C72' },
-      { id: 'ap-greedy-gold', brand: 'The Army Painter', range: 'Warpaints Fanatic', name_es: 'Oro Codicioso', name_en: 'Greedy Gold', code: 'WP3194', type: 'Metálico', hex: '#C59536' },
-
-      // ==================== WASHES / TINTAS Y CONTRAST / XPRESS ====================
-      { id: 'cit-nuln', brand: 'Citadel', range: 'Shade', name_es: 'Aceite Nuln (Tinta Negra)', name_en: 'Nuln Oil', code: '24-14', type: 'Wash / Tinta', hex: '#1E2024' },
-      { id: 'cit-agrax', brand: 'Citadel', range: 'Shade', name_es: 'Sombra Tierra Agrax', name_en: 'Agrax Earthshade', code: '24-15', type: 'Wash / Tinta', hex: '#3D2B1D' },
-      { id: 'cit-reikland', brand: 'Citadel', range: 'Shade', name_es: 'Sombra Carne Reikland', name_en: 'Reikland Fleshshade', code: '24-24', type: 'Wash / Tinta', hex: '#6F3424' },
-      { id: 'cit-bloodangels', brand: 'Citadel', range: 'Contrast', name_es: 'Rojo Ángeles Sangrientos', name_en: 'Blood Angels Red', code: '29-12', type: 'Contrast / Xpress', hex: '#A8181B' },
-      { id: 'cit-skeletonhorde', brand: 'Citadel', range: 'Contrast', name_es: 'Horda Esqueleto', name_en: 'Skeleton Horde', code: '29-26', type: 'Contrast / Xpress', hex: '#A58E63' },
-      { id: 'vgc-blackwash', brand: 'Vallejo Game Color', range: 'Wash', name_es: 'Lavado Negro', name_en: 'Black Wash', code: '73.201', type: 'Wash / Tinta', hex: '#202226' },
-      { id: 'vgc-umberwash', brand: 'Vallejo Game Color', range: 'Wash', name_es: 'Lavado Sombra Tostada', name_en: 'Umber Wash', code: '73.203', type: 'Wash / Tinta', hex: '#3F2C1E' },
-      { id: 'vgc-xpress-velvetred', brand: 'Vallejo Game Color', range: 'Xpress Color', name_es: 'Rojo Terciopelo (Xpress)', name_en: 'Velvet Red', code: '72.408', type: 'Contrast / Xpress', hex: '#A3191D' },
-      { id: 'gsw-darkshade', brand: 'Green Stuff World', range: 'Inks / Washes', name_es: 'Tinta Sombra Oscura', name_en: 'Dark Shade Wash', code: '2011', type: 'Wash / Tinta', hex: '#1F2125' },
-      { id: 'gsw-sepiawash', brand: 'Green Stuff World', range: 'Inks / Washes', name_es: 'Tinta Sepia Marrón', name_en: 'Sepia Wash', code: '2013', type: 'Wash / Tinta', hex: '#412D1E' },
-      { id: 'ap-darktone', brand: 'The Army Painter', range: 'Warpaints Wash', name_es: 'Tono Oscuro (Tinta)', name_en: 'Dark Tone Wash', code: 'WP3165', type: 'Wash / Tinta', hex: '#1E2024' },
-      { id: 'ap-strongtone', brand: 'The Army Painter', range: 'Warpaints Wash', name_es: 'Tono Fuerte (Tinta Marrón)', name_en: 'Strong Tone Wash', code: 'WP3166', type: 'Wash / Tinta', hex: '#3E2B1C' }
-    ];
+    let PAINT_DATABASE = [];
 
     const ALL_BRANDS = [
       'Citadel',
@@ -690,11 +553,11 @@
     ];
 
     const state = {
-      lang: 'es',
+      lang: (document.documentElement.lang === 'en' || (!document.documentElement.lang && (navigator.language || '').toLowerCase().startsWith('en'))) ? 'en' : 'es',
       searchQuery: '',
       activeBrands: new Set(ALL_BRANDS),
       activeTypes: new Set(ALL_TYPES),
-      referencePaint: PAINT_DATABASE[0],
+      referencePaint: null,
       isCustomColorMode: false,
       customHex: '#9A1B1E',
       sameFinishOnly: true,
@@ -706,8 +569,100 @@
       deferredInstallPrompt: null
     };
 
+    // ==================== PERSISTENCIA DE PREFERENCIAS (localStorage) ====================
+
+    const SETTINGS_KEY = 'chromamini.settings';
+    const DEFAULT_REFERENCE_ID = 'cit-mephiston';
+
+    function loadSettings() {
+      try {
+        return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') || {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveSettings() {
+      try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+          lang: state.lang,
+          theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+          cbEnabled: state.cbEnabled,
+          cbType: state.cbType,
+          cbMode: state.cbMode,
+          cbSplitSwatch: state.cbSplitSwatch,
+          sameFinishOnly: state.sameFinishOnly,
+          excludeSameBrand: state.excludeSameBrand,
+          activeBrands: [...state.activeBrands],
+          activeTypes: [...state.activeTypes],
+          referenceId: state.referencePaint ? state.referencePaint.id : null,
+          isCustomColorMode: state.isCustomColorMode,
+          customHex: state.customHex
+        }));
+      } catch (e) {
+        // Modo privado o almacenamiento bloqueado: la app sigue funcionando sin persistir
+      }
+    }
+
+    function restoreSettings() {
+      const saved = loadSettings();
+      if (saved.lang === 'es' || saved.lang === 'en') state.lang = saved.lang;
+      if (typeof saved.cbEnabled === 'boolean') state.cbEnabled = saved.cbEnabled;
+      if (saved.cbType && COLORBLIND_PROFILES[saved.cbType] && saved.cbType !== 'none') state.cbType = saved.cbType;
+      if (saved.cbMode === 'correct' || saved.cbMode === 'simulate') state.cbMode = saved.cbMode;
+      if (typeof saved.cbSplitSwatch === 'boolean') state.cbSplitSwatch = saved.cbSplitSwatch;
+      if (typeof saved.sameFinishOnly === 'boolean') state.sameFinishOnly = saved.sameFinishOnly;
+      if (typeof saved.excludeSameBrand === 'boolean') state.excludeSameBrand = saved.excludeSameBrand;
+
+      const brands = Array.isArray(saved.activeBrands) ? saved.activeBrands.filter(b => ALL_BRANDS.includes(b)) : [];
+      if (brands.length) state.activeBrands = new Set(brands);
+      const types = Array.isArray(saved.activeTypes) ? saved.activeTypes.filter(ty => ALL_TYPES.includes(ty)) : [];
+      if (types.length) state.activeTypes = new Set(types);
+
+      state.referencePaint = PAINT_DATABASE.find(p => p.id === saved.referenceId)
+        || PAINT_DATABASE.find(p => p.id === DEFAULT_REFERENCE_ID)
+        || PAINT_DATABASE[0];
+      if (typeof saved.customHex === 'string' && /^#[0-9A-F]{6}$/i.test(saved.customHex)) {
+        state.customHex = saved.customHex.toUpperCase();
+        state.isCustomColorMode = saved.isCustomColorMode === true;
+      }
+    }
+
     const UI_STRINGS = {
       es: {
+        pageTitle: 'ChromaMini · Comparador Bilingüe de Pinturas para Miniaturas',
+        metaDescription: 'Comparador y conversor perceptual de pinturas acrílicas para miniaturas (Citadel, Vallejo, Green Stuff World, AK, Army Painter) con modo daltonismo.',
+        cbSwitchTitle: 'Activar o desactivar asistencia para daltonismo',
+        cbSelectAria: 'Tipo de daltonismo',
+        cbTestLinkTitle: 'Hacer test de daltonismo online',
+        langGroupAria: 'Idioma de la interfaz',
+        themeToggleTitle: 'Cambiar tema claro/oscuro',
+        clearSearchTitle: 'Limpiar búsqueda',
+        copyHexTitle: 'Copiar código HEX original',
+        closeAria: 'Cerrar',
+        customCode: 'PERSONAL',
+        quickVermilion: 'Rojo Bermellón',
+        footerAuthor: '© 2026 FireZenk · Creado por FireZenk',
+        footerRepoLink: 'Reportar errores o contribuir en GitHub',
+        loadError: 'No se pudo cargar la base de datos de pinturas (paints.json). Recarga la página.',
+        typeBadges: { 'Metálico': 'MET', 'Wash / Tinta': 'TINTA', 'Contrast / Xpress': 'CONTR' },
+        families: {
+          'MET-GOLD': ['MET·ORO', 'Metálico Dorado/Bronce'],
+          'MET-STEEL': ['MET·ACR', 'Metálico Acero/Plata'],
+          BLACK: ['NEG', 'Negro'],
+          WHITE: ['BLA', 'Blanco'],
+          GREY: ['GRI', 'Gris'],
+          BONE: ['HUE', 'Hueso / Crema'],
+          BROWN: ['MAR', 'Marrón / Tierra'],
+          RED: ['ROJ', 'Rojo'],
+          ORANGE: ['NAR', 'Naranja'],
+          YELLOW: ['AMR', 'Amarillo'],
+          GREEN: ['VRD', 'Verde'],
+          CYAN: ['TRQ', 'Turquesa / Cian'],
+          BLUE: ['AZL', 'Azul'],
+          PURPLE: ['VIO', 'Púrpura / Violeta'],
+          PINK: ['ROS', 'Magenta / Rosa']
+        },
         headerSubtitle: 'Conversor y comparador perceptual de pinturas acrílicas para modelismo',
         installApp: 'Instala la Web-App',
         cbHeader: 'Daltonismo',
@@ -760,7 +715,7 @@
         understoodBtn: 'Entendido',
         footerDisclaimer: 'ChromaMini · Los valores HEX son aproximaciones digitales calibradas; el acabado final puede variar ligeramente según imprimación y barniz.',
         types: {
-          'Base': 'Base',
+          'Base': 'Base / Estándar',
           'Metálico': 'Metálico',
           'Wash / Tinta': 'Wash / Tinta',
           'Contrast / Xpress': 'Contrast / Xpress'
@@ -785,6 +740,39 @@
         }
       },
       en: {
+        pageTitle: 'ChromaMini · Bilingual Miniature Paint Comparator',
+        metaDescription: 'Perceptual acrylic miniature paint converter and comparator (Citadel, Vallejo, Green Stuff World, AK, Army Painter) with color blind mode.',
+        cbSwitchTitle: 'Toggle color blind assistance',
+        cbSelectAria: 'Color blindness type',
+        cbTestLinkTitle: 'Take an online color blind test',
+        langGroupAria: 'Interface language',
+        themeToggleTitle: 'Toggle light/dark theme',
+        clearSearchTitle: 'Clear search',
+        copyHexTitle: 'Copy original HEX code',
+        closeAria: 'Close',
+        customCode: 'CUSTOM',
+        quickVermilion: 'Vermilion',
+        footerAuthor: '© 2026 FireZenk · Created by FireZenk',
+        footerRepoLink: 'Report issues or contribute on GitHub',
+        loadError: 'Could not load the paint database (paints.json). Please reload the page.',
+        typeBadges: { 'Metálico': 'MET', 'Wash / Tinta': 'INK', 'Contrast / Xpress': 'CONTR' },
+        families: {
+          'MET-GOLD': ['MET·GLD', 'Metallic Gold/Bronze'],
+          'MET-STEEL': ['MET·STL', 'Metallic Steel/Silver'],
+          BLACK: ['BLK', 'Black'],
+          WHITE: ['WHT', 'White'],
+          GREY: ['GRY', 'Grey'],
+          BONE: ['BNE', 'Bone / Cream'],
+          BROWN: ['BRN', 'Brown / Earth'],
+          RED: ['RED', 'Red'],
+          ORANGE: ['ORG', 'Orange'],
+          YELLOW: ['YLW', 'Yellow'],
+          GREEN: ['GRN', 'Green'],
+          CYAN: ['TRQ', 'Turquoise / Cyan'],
+          BLUE: ['BLU', 'Blue'],
+          PURPLE: ['PUR', 'Purple / Violet'],
+          PINK: ['PNK', 'Magenta / Pink']
+        },
         headerSubtitle: 'Perceptual acrylic miniature paint converter & comparator',
         installApp: 'Install Web-App',
         cbHeader: 'Color Blind',
@@ -906,35 +894,6 @@
       return UI_STRINGS[state.lang];
     }
 
-    // ==================== INICIALIZACIÓN DE MANIFEST PWA DINÁMICO ====================
-    function setupDynamicPwaManifest() {
-      const iconSvg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#f59e0b'/><stop offset='55%' stop-color='#f97316'/><stop offset='100%' stop-color='#e11d48'/></linearGradient></defs><rect width='512' height='512' rx='112' fill='#11131a'/><path d='M256 80 L372 196 A164 164 0 1 1 140 196 Z' fill='url(#g)'/><path d='M184 288 A72 72 0 0 0 256 360' fill='none' stroke='#ffffff' stroke-width='26' stroke-linecap='round' opacity='0.85'/></svg>`;
-      const iconUrl = 'data:image/svg+xml,' + encodeURIComponent(iconSvg);
-
-      const manifest = {
-        name: 'ChromaMini · Miniature Paint Converter',
-        short_name: 'ChromaMini',
-        description: 'Perceptual miniature acrylic paint converter & comparator (Citadel, Vallejo, Green Stuff World, AK, Army Painter).',
-        start_url: window.location.href,
-        display: 'standalone',
-        background_color: '#090a0f',
-        theme_color: '#11131a',
-        icons: [
-          { src: iconUrl, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
-          { src: iconUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
-        ]
-      };
-
-      try {
-        const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-        const manifestURL = URL.createObjectURL(blob);
-        const link = document.getElementById('pwaManifestLink');
-        if (link) link.setAttribute('href', manifestURL);
-      } catch (e) {
-        // Ignorar si el entorno restringe Blob URLs
-      }
-    }
-
     // ==================== UTILIDADES DE CONVERSIÓN DE COLOR Y CIELAB DELTA-E ====================
 
     function hexToRgb(hex) {
@@ -988,13 +947,78 @@
       };
     }
 
+    const labCache = new Map();
+    function hexToLab(hex) {
+      const key = (hex || '').toUpperCase();
+      let lab = labCache.get(key);
+      if (!lab) {
+        lab = rgbToLab(hexToRgb(key));
+        labCache.set(key, lab);
+      }
+      return lab;
+    }
+
+    /**
+     * Diferencia de color CIEDE2000 (Sharma, Wu & Dalal 2005), kL = kC = kH = 1.
+     * Mucho más fiel a la percepción humana que ΔE76 en azules, saturados y neutros.
+     */
+    function deltaE2000(lab1, lab2) {
+      const rad = Math.PI / 180;
+      const deg = 180 / Math.PI;
+      const { L: L1, a: a1, b: b1 } = lab1;
+      const { L: L2, a: a2, b: b2 } = lab2;
+
+      const C1 = Math.hypot(a1, b1);
+      const C2 = Math.hypot(a2, b2);
+      const Cbar7 = Math.pow((C1 + C2) / 2, 7);
+      const G = 0.5 * (1 - Math.sqrt(Cbar7 / (Cbar7 + Math.pow(25, 7))));
+
+      const a1p = (1 + G) * a1;
+      const a2p = (1 + G) * a2;
+      const C1p = Math.hypot(a1p, b1);
+      const C2p = Math.hypot(a2p, b2);
+      const h1p = (b1 === 0 && a1p === 0) ? 0 : (Math.atan2(b1, a1p) * deg + 360) % 360;
+      const h2p = (b2 === 0 && a2p === 0) ? 0 : (Math.atan2(b2, a2p) * deg + 360) % 360;
+
+      const dLp = L2 - L1;
+      const dCp = C2p - C1p;
+      let dhp = 0;
+      if (C1p * C2p !== 0) {
+        dhp = h2p - h1p;
+        if (dhp > 180) dhp -= 360;
+        else if (dhp < -180) dhp += 360;
+      }
+      const dHp = 2 * Math.sqrt(C1p * C2p) * Math.sin((dhp / 2) * rad);
+
+      const Lbarp = (L1 + L2) / 2;
+      const Cbarp = (C1p + C2p) / 2;
+      let hbarp = h1p + h2p;
+      if (C1p * C2p !== 0) {
+        if (Math.abs(h1p - h2p) <= 180) hbarp = (h1p + h2p) / 2;
+        else hbarp = (h1p + h2p < 360) ? (h1p + h2p + 360) / 2 : (h1p + h2p - 360) / 2;
+      }
+
+      const T = 1
+        - 0.17 * Math.cos((hbarp - 30) * rad)
+        + 0.24 * Math.cos((2 * hbarp) * rad)
+        + 0.32 * Math.cos((3 * hbarp + 6) * rad)
+        - 0.20 * Math.cos((4 * hbarp - 63) * rad);
+      const dTheta = 30 * Math.exp(-Math.pow((hbarp - 275) / 25, 2));
+      const Cbarp7 = Math.pow(Cbarp, 7);
+      const RC = 2 * Math.sqrt(Cbarp7 / (Cbarp7 + Math.pow(25, 7)));
+      const SL = 1 + (0.015 * Math.pow(Lbarp - 50, 2)) / Math.sqrt(20 + Math.pow(Lbarp - 50, 2));
+      const SC = 1 + 0.045 * Cbarp;
+      const SH = 1 + 0.015 * Cbarp * T;
+      const RT = -Math.sin((2 * dTheta) * rad) * RC;
+
+      const tL = dLp / SL;
+      const tC = dCp / SC;
+      const tH = dHp / SH;
+      return Math.sqrt(tL * tL + tC * tC + tH * tH + RT * tC * tH);
+    }
+
     function calculateDeltaE(hex1, hex2) {
-      const lab1 = rgbToLab(hexToRgb(hex1));
-      const lab2 = rgbToLab(hexToRgb(hex2));
-      const dL = lab1.L - lab2.L;
-      const da = lab1.a - lab2.a;
-      const db = lab1.b - lab2.b;
-      return Math.sqrt(dL * dL + da * da + db * db);
+      return deltaE2000(hexToLab(hex1), hexToLab(hex2));
     }
 
     function rgbToHsl({ r, g, b }) {
@@ -1114,34 +1138,33 @@
       return rgbToHex(outRgb);
     }
 
-    function getColorFamilyTag(hex, paintType = 'Base') {
-      if (paintType === 'Metálico') {
-        const { h, s } = rgbToHsl(hexToRgb(hex));
-        if (s > 0.25 && h >= 20 && h <= 55) return { code: 'MET·ORO', label: 'Metálico Dorado/Bronce' };
-        return { code: 'MET·ACR', label: 'Metálico Acero/Plata' };
-      }
-
+    function getColorFamilyKey(hex, paintType = 'Base') {
       const { h, s, l } = rgbToHsl(hexToRgb(hex));
-
-      if (l <= 0.13) return { code: 'NEG', label: 'Negro' };
-      if (l >= 0.90 && s <= 0.20) return { code: 'BLA', label: 'Blanco' };
-      if (s <= 0.14) return { code: 'GRI', label: 'Gris' };
-
-      if (l >= 0.72 && h >= 28 && h <= 58 && s <= 0.52) {
-        return { code: 'HUE', label: 'Hueso / Crema' };
-      }
-      if ((h >= 12 && h <= 42) && l < 0.45) {
-        return { code: 'MAR', label: 'Marrón / Tierra' };
+      if (paintType === 'Metálico') {
+        return (s > 0.25 && h >= 20 && h <= 55) ? 'MET-GOLD' : 'MET-STEEL';
       }
 
-      if (h < 15 || h >= 340) return { code: 'ROJ', label: 'Rojo' };
-      if (h >= 15 && h < 42) return { code: 'NAR', label: 'Naranja' };
-      if (h >= 42 && h < 68) return { code: 'AMR', label: 'Amarillo' };
-      if (h >= 68 && h < 165) return { code: 'VRD', label: 'Verde' };
-      if (h >= 165 && h < 200) return { code: 'TRQ', label: 'Turquesa / Cian' };
-      if (h >= 200 && h < 260) return { code: 'AZL', label: 'Azul' };
-      if (h >= 260 && h < 310) return { code: 'VIO', label: 'Púrpura / Violeta' };
-      return { code: 'ROS', label: 'Magenta / Rosa' };
+      if (l <= 0.13) return 'BLACK';
+      // En HSL la saturación se dispara cerca del blanco (#F7F8FA da s≈0.33): usar también umbral de luminosidad
+      if (l >= 0.94 || (l >= 0.90 && s <= 0.20)) return 'WHITE';
+      if (s <= 0.14) return 'GREY';
+      if (l >= 0.72 && h >= 28 && h <= 58 && s <= 0.52) return 'BONE';
+      if ((h >= 12 && h <= 42) && l < 0.45) return 'BROWN';
+
+      if (h < 15 || h >= 340) return 'RED';
+      if (h < 42) return 'ORANGE';
+      if (h < 68) return 'YELLOW';
+      if (h < 165) return 'GREEN';
+      if (h < 200) return 'CYAN';
+      if (h < 260) return 'BLUE';
+      if (h < 310) return 'PURPLE';
+      return 'PINK';
+    }
+
+    function getColorFamilyTag(hex, paintType = 'Base') {
+      const key = getColorFamilyKey(hex, paintType);
+      const [code, label] = t().families[key];
+      return { key, code, label };
     }
 
     function getSwatchTextureClass(type) {
@@ -1152,21 +1175,21 @@
 
     function getMatchBadge(deltaE) {
       const strings = t().badges;
-      if (deltaE <= 3.0) {
+      if (deltaE <= 2.0) {
         return {
           label: strings.exact,
           symbol: '●',
           classes: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/35'
         };
       }
-      if (deltaE <= 7.5) {
+      if (deltaE <= 5.0) {
         return {
           label: strings.close,
           symbol: '◆',
           classes: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/35'
         };
       }
-      if (deltaE <= 14.0) {
+      if (deltaE <= 10.0) {
         return {
           label: strings.approx,
           symbol: '▲',
@@ -1200,20 +1223,32 @@
       }, 2200);
     }
 
-    function copyTextToClipboard(text) {
+    function legacyCopy(text) {
       const textarea = document.createElement('textarea');
       textarea.value = text;
       textarea.style.position = 'fixed';
       textarea.style.opacity = '0';
       document.body.appendChild(textarea);
       textarea.select();
-      try {
-        document.execCommand('copy');
-        showToast(t().toasts.copied(text));
-      } catch (e) {
-        showToast(t().toasts.copyError);
-      }
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
       document.body.removeChild(textarea);
+      return ok;
+    }
+
+    async function copyTextToClipboard(text) {
+      let ok = false;
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          ok = true;
+        } catch (e) {
+          ok = legacyCopy(text);
+        }
+      } else {
+        ok = legacyCopy(text);
+      }
+      showToast(ok ? t().toasts.copied(text) : t().toasts.copyError);
     }
 
     // ==================== TRADUCCIÓN DINÁMICA DE TODA LA INTERFAZ ====================
@@ -1221,6 +1256,21 @@
     function applyLanguageUI() {
       const s = t();
       document.documentElement.lang = state.lang;
+      document.title = s.pageTitle;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.setAttribute('content', s.metaDescription);
+
+      document.getElementById('cbQuickSwitch').title = s.cbSwitchTitle;
+      document.getElementById('cbTypeSelect').setAttribute('aria-label', s.cbSelectAria);
+      document.getElementById('cbHeaderTestLink').title = s.cbTestLinkTitle;
+      document.getElementById('langGroup').setAttribute('aria-label', s.langGroupAria);
+      document.getElementById('themeToggleBtn').title = s.themeToggleTitle;
+      document.getElementById('clearSearchBtn').title = s.clearSearchTitle;
+      document.getElementById('copyRefHexBtn').title = s.copyHexTitle;
+      document.getElementById('closeInstallModalBtn').setAttribute('aria-label', s.closeAria);
+      const quickVermilion = document.getElementById('quickVermilionBtn');
+      quickVermilion.textContent = s.quickVermilion;
+      quickVermilion.setAttribute('data-quick', s.quickVermilion);
 
       document.getElementById('headerSubtitle').textContent = s.headerSubtitle;
       document.getElementById('installAppBtnLabel').textContent = s.installApp;
@@ -1263,6 +1313,8 @@
       document.getElementById('androidStepDesc').innerHTML = s.androidStepDesc;
       document.getElementById('doneInstallModalBtn').textContent = s.understoodBtn;
       document.getElementById('footerDisclaimer').textContent = s.footerDisclaimer;
+      document.getElementById('footerAuthor').textContent = s.footerAuthor;
+      document.getElementById('footerRepoLink').textContent = s.footerRepoLink;
 
       // Actualizar opciones del selector de daltonismo
       const cbSelect = document.getElementById('cbTypeSelect');
@@ -1364,21 +1416,21 @@
 
         const primaryName = state.lang === 'en' ? paint.name_en : paint.name_es;
         const secondaryName = state.lang === 'en' ? paint.name_es : paint.name_en;
-        const typeBadgeText = paint.type === 'Metálico' ? 'MET' : (state.lang === 'en' ? 'INK' : 'TINTA');
+        const typeBadgeText = s.typeBadges[paint.type] || '';
 
         const swatchHtml = showSplit
           ? `
             <div class="w-16 h-14 rounded-xl shrink-0 border border-black/20 dark:border-white/15 shadow-inner relative overflow-hidden flex" title="${s.originalTag}: ${paint.hex} · ${state.cbMode === 'simulate' ? s.simulatedTag : s.correctedTag}: ${processedHex}">
               <div class="w-1/2 h-full ${textureClass}" style="background-color: ${paint.hex};"></div>
               <div class="w-1/2 h-full ${textureClass} border-l border-white/30" style="background-color: ${processedHex};"></div>
-              <span class="absolute top-1 left-1 px-1 rounded bg-black/65 text-[9px] font-mono font-extrabold text-white tracking-tight">${familyTag.code}</span>
+              <span class="absolute top-1 left-1 px-1 rounded bg-black/65 text-[9px] font-mono font-extrabold text-white tracking-tight" title="${familyTag.label}">${familyTag.code}</span>
               ${paint.type !== 'Base' ? `<span class="absolute bottom-1 right-1 px-1 rounded bg-black/60 text-[8px] font-bold text-white uppercase">${typeBadgeText}</span>` : ''}
             </div>
           `
           : `
             <div class="w-16 h-14 rounded-xl shrink-0 border border-black/15 dark:border-white/15 shadow-inner relative overflow-hidden ${textureClass}"
               style="background-color: ${processedHex};">
-              <span class="absolute top-1 left-1 px-1 rounded bg-black/60 text-[9px] font-mono font-extrabold text-white tracking-tight">${familyTag.code}</span>
+              <span class="absolute top-1 left-1 px-1 rounded bg-black/60 text-[9px] font-mono font-extrabold text-white tracking-tight" title="${familyTag.label}">${familyTag.code}</span>
               ${paint.type !== 'Base' ? `<span class="absolute bottom-1 right-1 px-1 rounded bg-black/60 text-[8px] font-bold text-white uppercase">${typeBadgeText}</span>` : ''}
             </div>
           `;
@@ -1439,6 +1491,7 @@
       const family = getColorFamilyTag(rawHex, paintType);
 
       familyBadge.textContent = `[${family.code}]`;
+      familyBadge.title = family.label;
       origTag.textContent = s.originalTag;
 
       if (!state.isCustomColorMode) {
@@ -1471,7 +1524,7 @@
         hexText.textContent = rawHex.toUpperCase();
         namePrimary.textContent = s.customSampleTitle;
         nameSecondary.textContent = s.customSampleSub;
-        codeBadge.textContent = 'CUSTOM';
+        codeBadge.textContent = s.customCode;
         typeLabel.textContent = s.anyFinish;
       } else {
         const p = state.referencePaint;
@@ -1539,7 +1592,7 @@
         const matchTexture = getSwatchTextureClass(match.type);
         const displayMatchHex = getProcessedHex(match.hex);
         const family = getColorFamilyTag(match.hex, match.type);
-        const confusionWarning = cbActive && match.deltaE > 6.5 && match.perceivedDeltaE < 3.0;
+        const confusionWarning = cbActive && match.deltaE > 5.0 && match.perceivedDeltaE < 2.0;
 
         const primaryName = state.lang === 'en' ? match.name_en : match.name_es;
         const secondaryName = state.lang === 'en' ? match.name_es : match.name_en;
@@ -1550,7 +1603,7 @@
             <div class="w-16 h-14 rounded-xl overflow-hidden shrink-0 flex relative border border-black/20 dark:border-white/15 shadow-inner">
               <div class="w-1/2 h-full ${refTexture}" style="background-color: ${displayRefHex};"></div>
               <div class="w-1/2 h-full ${matchTexture} border-l border-white/25" style="background-color: ${displayMatchHex};"></div>
-              <span class="absolute bottom-1 left-1 px-1 rounded bg-black/65 text-[8px] font-mono font-extrabold text-white">${family.code}</span>
+              <span class="absolute bottom-1 left-1 px-1 rounded bg-black/65 text-[8px] font-mono font-extrabold text-white" title="${family.label}">${family.code}</span>
             </div>
 
             <div class="min-w-0 flex-1">
@@ -1598,6 +1651,77 @@
       }).join('');
     }
 
+    // ==================== SINCRONIZACIÓN DE LA UI DE DALTONISMO ====================
+
+    function syncColorBlindUI(reRender = true) {
+      const cbQuickSwitch = document.getElementById('cbQuickSwitch');
+      const cbQuickSwitchKnob = document.getElementById('cbQuickSwitchKnob');
+      const cbTypeSelect = document.getElementById('cbTypeSelect');
+      const cbAssistantBar = document.getElementById('cbAssistantBar');
+      const cbModeCorrectBtn = document.getElementById('cbModeCorrectBtn');
+      const cbModeSimulateBtn = document.getElementById('cbModeSimulateBtn');
+      const isActive = state.cbEnabled && state.cbType !== 'none';
+
+      cbQuickSwitch.setAttribute('aria-checked', String(isActive));
+      cbQuickSwitch.classList.toggle('bg-amber-500', isActive);
+      cbQuickSwitch.classList.toggle('bg-slate-300', !isActive);
+      cbQuickSwitch.classList.toggle('dark:bg-studio-600', !isActive);
+      cbQuickSwitchKnob.classList.toggle('translate-x-4', isActive);
+      cbQuickSwitchKnob.classList.toggle('translate-x-0', !isActive);
+      cbAssistantBar.classList.toggle('hidden', !isActive);
+
+      if (isActive) {
+        const profile = COLORBLIND_PROFILES[state.cbType];
+        document.getElementById('cbActiveProfileTitle').textContent = profile.name[state.lang];
+        document.getElementById('cbActiveProfileDesc').textContent = profile.desc[state.lang];
+      }
+
+      cbTypeSelect.value = isActive ? state.cbType : 'none';
+      document.getElementById('cbSplitSwatchToggle').checked = state.cbSplitSwatch;
+
+      const activeCls = ['bg-amber-500', 'text-white', 'shadow-sm'];
+      const idleCls = ['text-slate-600', 'dark:text-slate-300'];
+      const [onBtn, offBtn] = state.cbMode === 'correct'
+        ? [cbModeCorrectBtn, cbModeSimulateBtn]
+        : [cbModeSimulateBtn, cbModeCorrectBtn];
+      onBtn.classList.add(...activeCls);
+      onBtn.classList.remove(...idleCls);
+      offBtn.classList.remove(...activeCls);
+      offBtn.classList.add(...idleCls);
+
+      if (reRender) renderAll();
+    }
+
+    function renderAll() {
+      renderFilterPills();
+      renderCatalog();
+      renderReferencePanel();
+      renderEquivalents();
+    }
+
+    // ==================== CARGA DE DATOS Y PWA ====================
+
+    async function loadPaintDatabase() {
+      const res = await fetch('paints.json', { cache: 'no-cache' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) throw new Error('Empty paint database');
+      return data;
+    }
+
+    function isStandalone() {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    function registerServiceWorker() {
+      if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => { /* sin soporte offline */ });
+      });
+    }
+
+    registerServiceWorker();
+
     // ==================== INICIALIZACIÓN Y DELEGACIÓN DE EVENTOS ====================
 
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -1607,14 +1731,57 @@
       if (nativeSection) nativeSection.classList.remove('hidden');
     });
 
-    document.addEventListener('DOMContentLoaded', () => {
-      setupDynamicPwaManifest();
+    window.addEventListener('appinstalled', () => {
+      state.deferredInstallPrompt = null;
+      document.getElementById('installAppBtn').classList.add('hidden');
+    });
 
+    document.addEventListener('DOMContentLoaded', async () => {
       const searchInput = document.getElementById('searchInput');
       const clearSearchBtn = document.getElementById('clearSearchBtn');
       const customColorPicker = document.getElementById('customColorPicker');
       const customHexInput = document.getElementById('customHexInput');
       const applyCustomColorBtn = document.getElementById('applyCustomColorBtn');
+
+      if (isStandalone()) document.getElementById('installAppBtn').classList.add('hidden');
+
+      applyLanguageUI();
+
+      try {
+        PAINT_DATABASE = await loadPaintDatabase();
+      } catch (err) {
+        console.error('[ChromaMini] paints.json', err);
+        const grid = document.getElementById('paintCatalogGrid');
+        grid.innerHTML = `<div class="sm:col-span-2 p-6 rounded-2xl border border-rose-500/40 bg-rose-500/10 text-sm text-rose-700 dark:text-rose-300">${t().loadError}</div>`;
+        return;
+      }
+
+      restoreSettings();
+      applyLanguageUI();
+
+      document.getElementById('sameFinishToggle').checked = state.sameFinishOnly;
+      document.getElementById('excludeSameBrandToggle').checked = state.excludeSameBrand;
+      const initialHex = state.isCustomColorMode ? state.customHex : state.referencePaint.hex;
+      customColorPicker.value = initialHex;
+      customHexInput.value = initialHex.toUpperCase();
+
+      const setReference = (paint) => {
+        state.referencePaint = paint;
+        state.isCustomColorMode = false;
+        customColorPicker.value = paint.hex;
+        customHexInput.value = paint.hex.toUpperCase();
+        renderCatalog();
+        renderReferencePanel();
+        renderEquivalents();
+        saveSettings();
+      };
+
+      const setSearch = (term) => {
+        state.searchQuery = term;
+        searchInput.value = term;
+        clearSearchBtn.classList.toggle('hidden', !term);
+        renderCatalog();
+      };
 
       // Selector de idioma UI (ES / EN)
       document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -1624,10 +1791,8 @@
             state.lang = newLang;
             applyLanguageUI();
             syncColorBlindUI(false);
-            renderFilterPills();
-            renderCatalog();
-            renderReferencePanel();
-            renderEquivalents();
+            renderAll();
+            saveSettings();
             showToast(t().toasts.langChanged);
           }
         });
@@ -1635,17 +1800,17 @@
 
       // Modal Instalar Web-App
       const installModal = document.getElementById('installModal');
+      const closeInstallModal = () => installModal.classList.add('hidden');
       document.getElementById('installAppBtn').addEventListener('click', () => {
         installModal.classList.remove('hidden');
       });
-      document.getElementById('closeInstallModalBtn').addEventListener('click', () => {
-        installModal.classList.add('hidden');
-      });
-      document.getElementById('doneInstallModalBtn').addEventListener('click', () => {
-        installModal.classList.add('hidden');
-      });
+      document.getElementById('closeInstallModalBtn').addEventListener('click', closeInstallModal);
+      document.getElementById('doneInstallModalBtn').addEventListener('click', closeInstallModal);
       installModal.addEventListener('click', (e) => {
-        if (e.target === installModal) installModal.classList.add('hidden');
+        if (e.target === installModal) closeInstallModal();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !installModal.classList.contains('hidden')) closeInstallModal();
       });
 
       document.getElementById('triggerNativeInstallBtn').addEventListener('click', async () => {
@@ -1655,34 +1820,22 @@
         if (outcome === 'accepted') {
           state.deferredInstallPrompt = null;
           document.getElementById('nativeInstallSection').classList.add('hidden');
-          installModal.classList.add('hidden');
+          closeInstallModal();
         }
       });
 
       // 1. Buscador en tiempo real
-      searchInput.addEventListener('input', (e) => {
-        state.searchQuery = e.target.value;
-        clearSearchBtn.classList.toggle('hidden', !state.searchQuery);
-        renderCatalog();
-      });
+      searchInput.addEventListener('input', (e) => setSearch(e.target.value));
 
       clearSearchBtn.addEventListener('click', () => {
-        state.searchQuery = '';
-        searchInput.value = '';
-        clearSearchBtn.classList.add('hidden');
-        renderCatalog();
+        setSearch('');
         searchInput.focus();
       });
 
       // Pruebas rápidas
       document.getElementById('quickSearchContainer').addEventListener('click', (e) => {
         const btn = e.target.closest('.quick-search');
-        if (!btn) return;
-        const term = btn.getAttribute('data-quick');
-        state.searchQuery = term;
-        searchInput.value = term;
-        clearSearchBtn.classList.remove('hidden');
-        renderCatalog();
+        if (btn) setSearch(btn.getAttribute('data-quick'));
       });
 
       // 2. Filtros de Marca y Acabado
@@ -1698,6 +1851,7 @@
         }
         renderFilterPills();
         renderCatalog();
+        saveSettings();
       });
 
       document.getElementById('typeFiltersContainer').addEventListener('click', (e) => {
@@ -1712,40 +1866,30 @@
         }
         renderFilterPills();
         renderCatalog();
+        saveSettings();
       });
 
-      document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+      const resetFilters = () => {
         state.activeBrands = new Set(ALL_BRANDS);
         state.activeTypes = new Set(ALL_TYPES);
         renderFilterPills();
         renderCatalog();
-      });
+        saveSettings();
+      };
+
+      document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
 
       document.getElementById('resetAllBtn').addEventListener('click', () => {
-        state.searchQuery = '';
-        searchInput.value = '';
-        clearSearchBtn.classList.add('hidden');
-        state.activeBrands = new Set(ALL_BRANDS);
-        state.activeTypes = new Set(ALL_TYPES);
-        renderFilterPills();
-        renderCatalog();
+        setSearch('');
+        resetFilters();
       });
 
       // 3. Catálogo de Pinturas
       document.getElementById('paintCatalogGrid').addEventListener('click', (e) => {
         const card = e.target.closest('.paint-card');
         if (!card) return;
-        const id = card.getAttribute('data-paint-id');
-        const found = PAINT_DATABASE.find(p => p.id === id);
-        if (!found) return;
-
-        state.referencePaint = found;
-        state.isCustomColorMode = false;
-        customColorPicker.value = found.hex;
-        customHexInput.value = found.hex;
-        renderCatalog();
-        renderReferencePanel();
-        renderEquivalents();
+        const found = PAINT_DATABASE.find(p => p.id === card.getAttribute('data-paint-id'));
+        if (found) setReference(found);
       });
 
       // 4. Lista de Equivalencias
@@ -1759,27 +1903,15 @@
 
         const useBtn = e.target.closest('.select-match-btn');
         if (useBtn) {
-          const id = useBtn.getAttribute('data-select-id');
-          const found = PAINT_DATABASE.find(p => p.id === id);
+          const found = PAINT_DATABASE.find(p => p.id === useBtn.getAttribute('data-select-id'));
           if (!found) return;
-          state.referencePaint = found;
-          state.isCustomColorMode = false;
-          customColorPicker.value = found.hex;
-          customHexInput.value = found.hex;
-          renderCatalog();
-          renderReferencePanel();
-          renderEquivalents();
-          const chosenName = state.lang === 'en' ? found.name_en : found.name_es;
-          showToast(t().toasts.refChanged(chosenName));
+          setReference(found);
+          showToast(t().toasts.refChanged(state.lang === 'en' ? found.name_en : found.name_es));
         }
       });
 
       // 5. Selector HEX personalizado
-      customColorPicker.addEventListener('input', (e) => {
-        customHexInput.value = e.target.value.toUpperCase();
-      });
-
-      applyCustomColorBtn.addEventListener('click', () => {
+      const applyCustomColor = () => {
         let val = customHexInput.value.trim();
         if (!val.startsWith('#')) val = '#' + val;
         if (/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(val)) {
@@ -1793,88 +1925,47 @@
           renderCatalog();
           renderReferencePanel();
           renderEquivalents();
+          saveSettings();
           showToast(t().toasts.comparingHex(state.customHex));
         } else {
           showToast(t().toasts.invalidHex);
         }
+      };
+
+      customColorPicker.addEventListener('input', (e) => {
+        customHexInput.value = e.target.value.toUpperCase();
+      });
+      customColorPicker.addEventListener('change', applyCustomColor);
+      applyCustomColorBtn.addEventListener('click', applyCustomColor);
+      customHexInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') applyCustomColor();
       });
 
       // 6. Toggles de comparación y copiado HEX
       document.getElementById('sameFinishToggle').addEventListener('change', (e) => {
         state.sameFinishOnly = e.target.checked;
         renderEquivalents();
+        saveSettings();
       });
 
       document.getElementById('excludeSameBrandToggle').addEventListener('change', (e) => {
         state.excludeSameBrand = e.target.checked;
         renderEquivalents();
+        saveSettings();
       });
 
       document.getElementById('copyRefHexBtn').addEventListener('click', () => {
-        const hex = document.getElementById('refHexText').textContent;
-        copyTextToClipboard(hex);
+        copyTextToClipboard(document.getElementById('refHexText').textContent);
       });
 
       // 7. Tema Claro / Oscuro
       document.getElementById('themeToggleBtn').addEventListener('click', () => {
         document.documentElement.classList.toggle('dark');
+        saveSettings();
       });
 
       // 8. Controles de Daltonismo
-      const cbQuickSwitch = document.getElementById('cbQuickSwitch');
-      const cbQuickSwitchKnob = document.getElementById('cbQuickSwitchKnob');
-      const cbTypeSelect = document.getElementById('cbTypeSelect');
-      const cbAssistantBar = document.getElementById('cbAssistantBar');
-      const cbActiveProfileTitle = document.getElementById('cbActiveProfileTitle');
-      const cbActiveProfileDesc = document.getElementById('cbActiveProfileDesc');
-      const cbModeCorrectBtn = document.getElementById('cbModeCorrectBtn');
-      const cbModeSimulateBtn = document.getElementById('cbModeSimulateBtn');
-      const cbSplitSwatchToggle = document.getElementById('cbSplitSwatchToggle');
-
-      function syncColorBlindUI(reRender = true) {
-        const isActive = state.cbEnabled && state.cbType !== 'none';
-
-        cbQuickSwitch.setAttribute('aria-checked', String(isActive));
-        if (isActive) {
-          cbQuickSwitch.classList.remove('bg-slate-300', 'dark:bg-studio-600');
-          cbQuickSwitch.classList.add('bg-amber-500');
-          cbQuickSwitchKnob.classList.remove('translate-x-0');
-          cbQuickSwitchKnob.classList.add('translate-x-4');
-          cbAssistantBar.classList.remove('hidden');
-
-          const profile = COLORBLIND_PROFILES[state.cbType];
-          cbActiveProfileTitle.textContent = profile.name[state.lang];
-          cbActiveProfileDesc.textContent = profile.desc[state.lang];
-        } else {
-          cbQuickSwitch.classList.add('bg-slate-300', 'dark:bg-studio-600');
-          cbQuickSwitch.classList.remove('bg-amber-500');
-          cbQuickSwitchKnob.classList.add('translate-x-0');
-          cbQuickSwitchKnob.classList.remove('translate-x-4');
-          cbAssistantBar.classList.add('hidden');
-        }
-
-        cbTypeSelect.value = isActive ? state.cbType : 'none';
-
-        if (state.cbMode === 'correct') {
-          cbModeCorrectBtn.classList.add('bg-amber-500', 'text-white', 'shadow-sm');
-          cbModeCorrectBtn.classList.remove('text-slate-600', 'dark:text-slate-300');
-          cbModeSimulateBtn.classList.remove('bg-amber-500', 'text-white', 'shadow-sm');
-          cbModeSimulateBtn.classList.add('text-slate-600', 'dark:text-slate-300');
-        } else {
-          cbModeSimulateBtn.classList.add('bg-amber-500', 'text-white', 'shadow-sm');
-          cbModeSimulateBtn.classList.remove('text-slate-600', 'dark:text-slate-300');
-          cbModeCorrectBtn.classList.remove('bg-amber-500', 'text-white', 'shadow-sm');
-          cbModeCorrectBtn.classList.add('text-slate-600', 'dark:text-slate-300');
-        }
-
-        if (reRender) {
-          renderCatalog();
-          renderReferencePanel();
-          renderEquivalents();
-        }
-      }
-
-      cbQuickSwitch.addEventListener('click', () => {
+      document.getElementById('cbQuickSwitch').addEventListener('click', () => {
         if (state.cbEnabled && state.cbType !== 'none') {
           state.cbEnabled = false;
         } else {
@@ -1882,10 +1973,11 @@
           if (state.cbType === 'none') state.cbType = 'deuteranomaly';
         }
         syncColorBlindUI();
+        saveSettings();
         showToast(state.cbEnabled ? t().toasts.cbOn(COLORBLIND_PROFILES[state.cbType].name[state.lang]) : t().toasts.cbOff);
       });
 
-      cbTypeSelect.addEventListener('change', (e) => {
+      document.getElementById('cbTypeSelect').addEventListener('change', (e) => {
         const val = e.target.value;
         if (val === 'none') {
           state.cbEnabled = false;
@@ -1894,59 +1986,29 @@
           state.cbType = val;
         }
         syncColorBlindUI();
+        saveSettings();
       });
 
-      cbModeCorrectBtn.addEventListener('click', () => {
+      document.getElementById('cbModeCorrectBtn').addEventListener('click', () => {
         state.cbMode = 'correct';
         syncColorBlindUI();
+        saveSettings();
       });
 
-      cbModeSimulateBtn.addEventListener('click', () => {
+      document.getElementById('cbModeSimulateBtn').addEventListener('click', () => {
         state.cbMode = 'simulate';
         syncColorBlindUI();
+        saveSettings();
       });
 
-      cbSplitSwatchToggle.addEventListener('change', (e) => {
+      document.getElementById('cbSplitSwatchToggle').addEventListener('change', (e) => {
         state.cbSplitSwatch = e.target.checked;
         syncColorBlindUI();
+        saveSettings();
       });
 
-      // Render inicial completo
-      renderFilterPills();
-      renderCatalog();
-      renderReferencePanel();
-      renderEquivalents();
-
-      // Sincronización bilingüe del pie de página (ES / EN)
-      function updateFooterI18n() {
-        const lang = (typeof state !== 'undefined' && state.lang) || document.documentElement.lang || 'es';
-        const isEn = lang.toLowerCase().startsWith('en');
-        const authorEl = document.querySelector('[data-i18n="footerAuthor"]');
-        const disclaimerEl = document.querySelector('[data-i18n="footerDisclaimer"]');
-        const repoEl = document.querySelector('[data-i18n="footerRepoLink"]');
-
-        if (authorEl) {
-          authorEl.textContent = isEn
-            ? '© 2026 FireZenk · Created by FireZenk'
-            : '© 2026 FireZenk · Creado por FireZenk';
-        }
-        if (disclaimerEl) {
-          disclaimerEl.textContent = isEn
-            ? 'ChromaMini · HEX values are calibrated digital approximations; final finish may vary depending on primer and varnish.'
-            : 'ChromaMini · Los valores HEX son aproximaciones digitales calibradas; el acabado final puede variar según imprimación y barniz.';
-        }
-        if (repoEl) {
-          repoEl.textContent = isEn
-            ? 'Report issues or contribute on GitHub'
-            : 'Reportar errores o contribuir en GitHub';
-        }
-      }
-
-      updateFooterI18n();
-      new MutationObserver(updateFooterI18n).observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['lang']
-      });
+      // Render inicial completo (incluye estado restaurado de daltonismo)
+      syncColorBlindUI(true);
     });
   </script>
 </body>
