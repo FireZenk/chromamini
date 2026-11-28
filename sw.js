@@ -3,7 +3,7 @@
  * - CDN assets (Tailwind, Google Fonts): stale-while-revalidate.
  * Bump CACHE_VERSION when the precache list changes.
  */
-const CACHE_VERSION = 'chromamini-v4';
+const CACHE_VERSION = 'chromamini-v5';
 const PRECACHE = [
   './',
   './index.html',
